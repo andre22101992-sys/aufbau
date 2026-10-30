@@ -1,0 +1,11 @@
+node_modules
+dist
+dev-dist
+coverage
+*.local
+.DS_Store
+# Persönliche Daten aus dem Monats-Check gehören nie ins Repository
+monats-check/
+
+# Lokale Claude-Code-Freigaben
+.claude/settings.local.json

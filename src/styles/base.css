@@ -1,0 +1,316 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* Übernimmt die Textgröße aus den iPhone-Einstellungen; Fallback 16px */
+  font: -apple-system-body;
+  font-family: var(--font-text);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  background: var(--bg);
+}
+
+@supports not (font: -apple-system-body) {
+  html {
+    font-size: 100%;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-text);
+  font-size: var(--fs-body);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: var(--fs-hero);
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  font-size: var(--fs-title);
+  line-height: 1.25;
+  font-weight: 650;
+}
+
+h3 {
+  font-size: var(--fs-body);
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* Mindestens 16px in Eingabefeldern, sonst zoomt Safari beim Antippen */
+input,
+select,
+textarea {
+  font-size: max(16px, 1rem);
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+  touch-action: manipulation;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 2px;
+}
+
+a {
+  color: var(--accent-ink);
+}
+
+.num {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+
+.muted {
+  color: var(--text-2);
+}
+
+.faint {
+  color: var(--text-3);
+}
+
+.small {
+  font-size: var(--fs-small);
+}
+
+.caption {
+  font-size: var(--fs-caption);
+}
+
+/* Bildschirm-Gerüst: Platz für Notch oben und Tab-Leiste unten */
+.screen {
+  padding: calc(var(--safe-top) + 12px) calc(var(--gutter) + var(--safe-right)) calc(var(--tabbar-h) + var(--safe-bottom) + 24px)
+    calc(var(--gutter) + var(--safe-left));
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.screen-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+.card {
+  background: var(--surface-1);
+  border-radius: var(--radius-card);
+  padding: 14px;
+}
+
+.card-hero {
+  background: var(--surface-1);
+  border-radius: var(--radius-card);
+  padding: 18px 16px;
+}
+
+.section-title {
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: var(--text-2);
+  margin: 8px 2px -6px;
+}
+
+/* Listen mit feinen Trennlinien statt einer Karte pro Zeile */
+.list {
+  background: var(--surface-1);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.list > * + * {
+  border-top: 1px solid var(--line);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--tap);
+  padding: 10px 14px;
+  width: 100%;
+  text-align: left;
+}
+
+a.row {
+  color: inherit;
+  text-decoration: none;
+}
+
+.row-grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: var(--radius-control);
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.12s var(--ease-out), background-color 0.15s;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.btn-secondary {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.btn-ghost {
+  color: var(--text-2);
+  min-height: var(--tap);
+  padding: 0 10px;
+}
+
+.btn-danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap);
+  height: var(--tap);
+  border-radius: var(--radius-pill);
+  color: var(--text-2);
+}
+
+.icon-btn:active {
+  background: var(--surface-2);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  font-size: var(--fs-caption);
+  color: var(--text-2);
+}
+
+.pill-accent {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: var(--fs-small);
+  color: var(--text-2);
+}
+
+.input {
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  width: 100%;
+}
+
+.input:focus {
+  border-color: var(--accent-ink);
+  outline: none;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

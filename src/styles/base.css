@@ -314,3 +314,19 @@ a.row {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Ergebniszeile mit Symbol: Limette für „klappt“, Rot für Probleme */
+.result {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: var(--fs-small);
+}
+
+.result.ok .icon {
+  color: var(--accent-ink);
+}
+
+.result.bad .icon {
+  color: var(--danger);
+}

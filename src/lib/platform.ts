@@ -24,6 +24,12 @@ export async function shareOrDownload(file: File): Promise<'shared' | 'downloade
       if (err instanceof DOMException && err.name === 'AbortError') return 'cancelled';
     }
   }
+  downloadFile(file);
+  return 'downloaded';
+}
+
+/** Lädt eine Datei über einen Download-Link herunter. */
+export function downloadFile(file: File): void {
   const url = URL.createObjectURL(file);
   const a = document.createElement('a');
   a.href = url;
@@ -32,7 +38,6 @@ export async function shareOrDownload(file: File): Promise<'shared' | 'downloade
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
-  return 'downloaded';
 }
 
 /** Bittet den Browser, die Daten nicht automatisch zu löschen. */

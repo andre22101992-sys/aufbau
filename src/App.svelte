@@ -12,6 +12,7 @@
   import Essen from './views/Essen.svelte';
   import Fortschritt from './views/Fortschritt.svelte';
   import Heute from './views/Heute.svelte';
+  import IphoneTest from './views/IphoneTest.svelte';
   import Onboarding from './views/Onboarding.svelte';
   import Training from './views/Training.svelte';
   import Uebung from './views/Uebung.svelte';
@@ -64,6 +65,8 @@
       <Einkauf />
     {:else if segments[0] === 'fortschritt'}
       <Fortschritt />
+    {:else if segments[0] === 'einstellungen' && segments[1] === 'test'}
+      <IphoneTest />
     {:else if segments[0] === 'einstellungen'}
       <Einstellungen />
     {:else}

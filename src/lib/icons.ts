@@ -7,12 +7,14 @@ import arrowsExchange from '../assets/icons/arrows-exchange.svg?raw';
 import barbell from '../assets/icons/barbell.svg?raw';
 import bolt from '../assets/icons/bolt.svg?raw';
 import calendar from '../assets/icons/calendar.svg?raw';
+import camera from '../assets/icons/camera.svg?raw';
 import chartLine from '../assets/icons/chart-line.svg?raw';
 import check from '../assets/icons/check.svg?raw';
 import chevronLeft from '../assets/icons/chevron-left.svg?raw';
 import chevronRight from '../assets/icons/chevron-right.svg?raw';
 import circle from '../assets/icons/circle.svg?raw';
 import circleCheck from '../assets/icons/circle-check.svg?raw';
+import clipboard from '../assets/icons/clipboard.svg?raw';
 import clock from '../assets/icons/clock.svg?raw';
 import deviceMobile from '../assets/icons/device-mobile.svg?raw';
 import download from '../assets/icons/download.svg?raw';
@@ -38,6 +40,7 @@ import sun from '../assets/icons/sun.svg?raw';
 import toolsKitchen from '../assets/icons/tools-kitchen-2.svg?raw';
 import trophy from '../assets/icons/trophy.svg?raw';
 import upload from '../assets/icons/upload.svg?raw';
+import volume from '../assets/icons/volume.svg?raw';
 import x from '../assets/icons/x.svg?raw';
 
 // Größe kommt aus dem CSS, deshalb die festen 24px entfernen
@@ -51,12 +54,14 @@ export const ICONS = {
   barbell: clean(barbell),
   bolt: clean(bolt),
   calendar: clean(calendar),
+  camera: clean(camera),
   'chart-line': clean(chartLine),
   check: clean(check),
   'chevron-left': clean(chevronLeft),
   'chevron-right': clean(chevronRight),
   circle: clean(circle),
   'circle-check': clean(circleCheck),
+  clipboard: clean(clipboard),
   clock: clean(clock),
   'device-mobile': clean(deviceMobile),
   download: clean(download),
@@ -82,6 +87,7 @@ export const ICONS = {
   'tools-kitchen-2': clean(toolsKitchen),
   trophy: clean(trophy),
   upload: clean(upload),
+  volume: clean(volume),
   x: clean(x),
 } as const;
 

@@ -2,6 +2,12 @@
   "version": "0.0.1",
   "configurations": [
     { "name": "aufbau-dev", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev"], "port": 5173 },
-    { "name": "aufbau-preview", "runtimeExecutable": "npm", "runtimeArgs": ["run", "preview"], "port": 4173 }
+    { "name": "aufbau-preview", "runtimeExecutable": "npm", "runtimeArgs": ["run", "preview"], "port": 4173 },
+    {
+      "name": "aufbau-pages",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "preview", "--base", "/aufbau/", "--port", "4174"],
+      "port": 4174
+    }
   ]
 }

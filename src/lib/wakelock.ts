@@ -15,14 +15,18 @@ async function acquire(): Promise<void> {
   }
 }
 
-export async function keepScreenOn(on: boolean): Promise<void> {
+/** Gibt true zurück, wenn der Bildschirm jetzt an bleibt. */
+export async function keepScreenOn(on: boolean): Promise<boolean> {
   wanted = on;
   if (on) {
     await acquire();
-  } else if (sentinel) {
+    return sentinel !== null;
+  }
+  if (sentinel) {
     await sentinel.release().catch(() => undefined);
     sentinel = null;
   }
+  return false;
 }
 
 // iOS gibt die Sperre beim Wechsel in den Hintergrund frei; beim Zurückkommen neu anfordern.

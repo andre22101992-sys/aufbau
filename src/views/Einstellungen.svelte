@@ -220,6 +220,15 @@
     {/each}
   </div>
 
+  <h2 class="section-title">iPhone</h2>
+  <div class="list">
+    <a class="row" href="#/einstellungen/test">
+      <Icon name="device-mobile" />
+      <span class="row-grow">iPhone-Test<br /><span class="small muted">Ton, Bildschirm, Kamera, Teilen, Kurzbefehl, Kalender</span></span>
+      <Icon name="chevron-right" />
+    </a>
+  </div>
+
   <h2 class="section-title">Daten</h2>
   <section class="card stack">
     <p class="small muted">

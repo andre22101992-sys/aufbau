@@ -27,22 +27,22 @@ export type PlanMeal =
 export const DINNER_BY_WEEKDAY = ['linsen', 'haehnchen', 'curry', 'thunfisch', 'linsen', 'hack', 'haehnchen'];
 
 export const FIXED: FixedMeal[] = [
-  { id: 'frueh', time: ['5:30', '8:30'], name: 'Milch und Banane', items: [{ food: 'milch', grams: 250 }, { food: 'banane', grams: 120 }] },
+  { id: 'frueh', time: ['5:30', '8:30'], name: 'Milch und Banane', items: [{ food: 'milch', grams: 200 }, { food: 'banane', grams: 120 }] },
   {
     id: 'oats',
     time: ['9:00', '10:00'],
     name: 'Overnight Oats',
-    items: [{ food: 'hafer', grams: 100 }, { food: 'milch', grams: 300 }],
+    items: [{ food: 'hafer', grams: 100 }, { food: 'milch', grams: 250 }],
     weekendName: 'Haferbrei, frisch',
     weekendNote: 'Am Wochenende frisch: 5 Minuten in der Milch quellen lassen oder kurz erwärmen',
   },
   {
     id: 'snack',
     time: ['15:30', '16:00'],
-    name: 'Eier und Gouda',
-    items: [{ food: 'ei', grams: 120 }, { food: 'gouda', grams: 30 }],
-    weekendItems: [{ food: 'ei', grams: 120 }],
-    weekendName: '2 hart gekochte Eier',
+    name: 'Eier mit Remoulade und Gouda',
+    items: [{ food: 'ei', grams: 120 }, { food: 'remoulade', grams: 20 }, { food: 'gouda', grams: 30 }],
+    weekendItems: [{ food: 'ei', grams: 120 }, { food: 'remoulade', grams: 20 }],
+    weekendName: '2 hart gekochte Eier mit Remoulade',
   },
   { id: 'spaet', time: ['21:15', '21:15'], name: 'Milch, Oats für morgen ansetzen', items: [{ food: 'milch', grams: 200 }], weekdayOnly: true },
 ];
@@ -59,8 +59,8 @@ const FIRST_DAY_MEALS: FixedMeal[] = [
   {
     id: 'mittag',
     time: ['12:30', '14:00'],
-    name: 'Eier, Banane und Milch',
-    items: [{ food: 'ei', grams: 180 }, { food: 'banane', grams: 120 }, { food: 'milch', grams: 250 }],
+    name: 'Eier mit Remoulade, Banane und Milch',
+    items: [{ food: 'ei', grams: 180 }, { food: 'remoulade', grams: 20 }, { food: 'banane', grams: 120 }, { food: 'milch', grams: 250 }],
     note: 'Heute keine Reste von gestern',
   },
 ];

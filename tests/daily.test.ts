@@ -44,8 +44,8 @@ describe('Kalorienziel', () => {
     }
   });
 
-  it('lässt auch beim niedrigsten Ziel noch Haferflocken und Milch übrig', () => {
-    const oats = mealsOf(MONDAY, { kcalTarget: 2400 }).find((m) => m.id === 'oats');
+  it('lässt auch beim niedrigsten einstellbaren Ziel noch Haferflocken und Milch übrig', () => {
+    const oats = mealsOf(MONDAY, { kcalTarget: 2500 }).find((m) => m.id === 'oats');
     expect(oats?.kind === 'fixed' && oats.items.every((i) => i.grams > 0)).toBe(true);
   });
 });

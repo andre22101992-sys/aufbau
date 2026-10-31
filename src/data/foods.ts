@@ -22,6 +22,7 @@ export interface Food {
 export const FOODS: Food[] = [
   { id: 'milch', name: 'H-Milch 3,5 %', kcal: 64, protein: 3.3, fiber: 0, calcium: 120, iron: 0, vitaminC: 1, pack: { grams: 1000, euro: 1.09, label: '1 l' }, unit: { name: 'ml', plural: 'ml', grams: 1 } },
   { id: 'banane', name: 'Banane', kcal: 95, protein: 1.1, fiber: 2, calcium: 5, iron: 0.3, vitaminC: 11, pack: { grams: 1000, euro: 1.69, label: '1 kg' }, unit: { name: 'Banane', plural: 'Bananen', grams: 120 } },
+  { id: 'remoulade', name: 'Remoulade', kcal: 330, protein: 1, fiber: 0, calcium: 15, iron: 0.3, vitaminC: 0, pack: { grams: 250, euro: 1.09, label: '1 Glas' }, unit: { name: 'EL', plural: 'EL', grams: 15 } },
   { id: 'hafer', name: 'Haferflocken, zart', kcal: 370, protein: 13.5, fiber: 10, calcium: 50, iron: 4.5, vitaminC: 0, pack: { grams: 500, euro: 0.79, label: '500 g' } },
   { id: 'ei', name: 'Eier', kcal: 140, protein: 12.5, fiber: 0, calcium: 50, iron: 1.9, vitaminC: 0, pack: { grams: 600, euro: 2.5, label: '10 Stück' }, unit: { name: 'Ei', plural: 'Eier', grams: 60 } },
   { id: 'gouda', name: 'Gouda', kcal: 356, protein: 25, fiber: 0, calcium: 800, iron: 0.2, vitaminC: 0, pack: { grams: 400, euro: 2.99, label: '400 g' } },

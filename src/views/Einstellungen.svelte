@@ -175,7 +175,7 @@
   <section class="card stack">
     <div class="goal">
       <span class="row-grow">Kalorien pro Tag<br /><span class="small muted">Der Plan passt die Oats an</span></span>
-      <Stepper value={app.settings.kcalTarget} label="Kalorienziel" step={50} min={2400} max={3400} unit="kcal" onchange={(v) => setKcalTarget(todayKey(), v)} />
+      <Stepper value={app.settings.kcalTarget} label="Kalorienziel" step={50} min={2500} max={3400} unit="kcal" onchange={(v) => setKcalTarget(todayKey(), v)} />
     </div>
     <p class="small muted">
       Fällt dir das Essen am Anfang schwer, starte bei 2.500 und steigere dich alle zwei Wochen um 150 bis 250 kcal. Das Protein-Ziel bleibt bei mindestens

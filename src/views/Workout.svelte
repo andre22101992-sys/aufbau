@@ -189,7 +189,8 @@
 
   <Sheet open={guideIndex !== null} title={guideIndex !== null ? getExercise(active.exercises[guideIndex].exerciseId).name : ''} onclose={() => (guideIndex = null)}>
     {#if guideIndex !== null}
-      <ExerciseGuide exercise={getExercise(active.exercises[guideIndex].exerciseId)} />
+      {@const log = active.exercises[guideIndex]}
+      <ExerciseGuide exercise={getExercise(log.exerciseId)} load={(log.sets.find((s) => !s.done) ?? log.sets[0])?.load} />
       <a class="btn btn-secondary" href="#/training/uebung/{active.exercises[guideIndex].exerciseId}">Verlauf und Notiz</a>
     {/if}
   </Sheet>

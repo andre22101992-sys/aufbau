@@ -65,6 +65,8 @@
       <Einkauf />
     {:else if segments[0] === 'fortschritt'}
       <Fortschritt />
+    {:else if import.meta.env.DEV && segments[0] === 'dev'}
+      {#await import('./views/DevFiguren.svelte') then dev}<dev.default />{/await}
     {:else if segments[0] === 'einstellungen' && segments[1] === 'test'}
       <IphoneTest />
     {:else if segments[0] === 'einstellungen'}

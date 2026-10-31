@@ -1,6 +1,6 @@
 // Gemeinsamer App-Zustand. Svelte-Zustände sind Proxys; vor dem Speichern immer $state.snapshot nutzen.
 
-import { withDefaults, type ActiveWorkout, type Settings, type Workout } from '../model';
+import { withDefaults, type ActiveWorkout, type Settings, type SleepEntry, type WeightEntry, type Workout } from '../model';
 import * as repo from '../repo';
 
 interface Toast {
@@ -12,6 +12,9 @@ export const app = $state({
   ready: false,
   settings: withDefaults(null) as Settings,
   workouts: [] as Workout[],
+  /** nach Datum sortiert */
+  weights: [] as WeightEntry[],
+  sleep: [] as SleepEntry[],
   overrides: {} as Record<string, unknown>,
   active: null as ActiveWorkout | null,
   needRefresh: false,
@@ -19,14 +22,18 @@ export const app = $state({
 });
 
 export async function loadApp(): Promise<void> {
-  const [settings, workouts, overrides, active] = await Promise.all([
+  const [settings, workouts, weights, sleep, overrides, active] = await Promise.all([
     repo.loadSettings(),
     repo.listWorkouts(),
+    repo.listWeights(),
+    repo.listSleep(),
     repo.listOverrides(),
     repo.loadActiveWorkout(),
   ]);
   app.settings = settings;
   app.workouts = workouts;
+  app.weights = weights;
+  app.sleep = sleep;
   app.overrides = overrides;
   app.active = active;
   app.ready = true;

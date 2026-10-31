@@ -58,6 +58,11 @@ export function shortVersion(slots: Slot[]): Slot[] {
   );
 }
 
+/** Nach kurzer Nacht: ein Satz weniger pro Übung */
+export function lighterVersion(slots: Slot[]): Slot[] {
+  return slots.map((s) => ({ ...s, sets: Math.max(1, s.sets - 1) }));
+}
+
 /** Entlastungswoche: 40 % weniger Sätze */
 export function deloadVersion(slots: Slot[]): Slot[] {
   return slots.map((s) => ({ ...s, sets: Math.max(1, Math.round(s.sets * 0.6)) }));

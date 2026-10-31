@@ -6,7 +6,7 @@ import type { DayId, Slot } from '../../data/types';
 import { todayKey, weekStart } from '../dates';
 import { buildLadder, startRung, type Rung } from '../ladder';
 import type { ActiveWorkout, ExerciseLog, Workout, WorkoutMode } from '../model';
-import { blockById, deloadVersion, plannedDay, resolveSlots, shortVersion, swapKey } from '../plan';
+import { blockById, deloadVersion, lighterVersion, plannedDay, resolveSlots, shortVersion, swapKey } from '../plan';
 import { uid } from '../platform';
 import { suggestNext, type Suggestion } from '../progression';
 import { findRecords, type NewRecord } from '../records';
@@ -41,6 +41,7 @@ export function slotsFor(blockId: string, dayId: DayId, mode: WorkoutMode): Slot
   const base = resolveSlots(block.days[dayId], blockId, app.overrides);
   if (mode === 'kurz') return shortVersion(base);
   if (mode === 'entlastung') return deloadVersion(base);
+  if (mode === 'leicht') return lighterVersion(base);
   return base;
 }
 

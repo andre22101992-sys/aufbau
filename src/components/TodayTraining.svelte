@@ -7,6 +7,7 @@
   import { feelingLabel } from '../lib/format';
   import type { WorkoutMode } from '../lib/model';
   import { plannedDay } from '../lib/plan';
+  import { readiness } from '../lib/readiness';
   import { app } from '../lib/state/app.svelte';
   import { go } from '../lib/state/router.svelte';
   import { isDeloadWeek, slotsFor, startWorkout } from '../lib/state/workout.svelte';
@@ -25,6 +26,8 @@
   const shortMinutes = $derived(planned.dayId ? estimateMinutes(slotsFor(planned.block.id, planned.dayId, 'kurz'), getExercise, app.settings.supersets) : 0);
   const time = $derived(planned.dayId === 'fr' ? app.settings.times.trainingFr : app.settings.times.trainingMoDo);
   const daysToStart = $derived(app.settings.startDate ? diffDays(app.settings.startDate, today) : 0);
+  const form = $derived(readiness(app.sleep.find((s) => s.date === today)?.hours ?? null, app.workouts.at(-1)?.feeling ?? null));
+  const lighterMinutes = $derived(planned.dayId ? estimateMinutes(slotsFor(planned.block.id, planned.dayId, 'leicht'), getExercise, app.settings.supersets) : 0);
 
   function start(dayId: DayId, mode: WorkoutMode = 'normal'): void {
     startWorkout(dayId, mode);
@@ -54,9 +57,17 @@
     {#if deload}
       <p class="pill pill-accent">Entlastungswoche: weniger Sätze</p>
     {/if}
+    {#if form.suggest && !deload}
+      <p class="form small"><Icon name="moon" size={18} /><span>{form.reason} Heute lieber die Kurzversion oder ein Satz weniger pro Übung? Du entscheidest.</span></p>
+    {/if}
     <button class="btn btn-primary btn-block go" onclick={() => start(planned.dayId!)}>
       <Icon name="player-play" size={20} />Training starten
     </button>
+    {#if form.suggest && !deload}
+      <button class="btn btn-secondary btn-block" onclick={() => start(planned.dayId!, 'leicht')}>
+        Ein Satz weniger, ca. {lighterMinutes} Min
+      </button>
+    {/if}
     <button class="btn btn-ghost btn-block" onclick={() => start(planned.dayId!, 'kurz')}>
       <Icon name="bolt" size={18} />Wenig Zeit? Kurzversion, ca. {shortMinutes} Min
     </button>
@@ -109,5 +120,15 @@
 
   .pill {
     align-self: flex-start;
+  }
+
+  .form {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    padding: 10px 12px;
+    background: var(--surface-2);
+    border-radius: var(--radius-control);
+    color: var(--text-2);
   }
 </style>

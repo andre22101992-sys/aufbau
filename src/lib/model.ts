@@ -24,7 +24,8 @@ export interface ExerciseLog {
   sets: SetLog[];
 }
 
-export type WorkoutMode = 'normal' | 'kurz' | 'entlastung';
+/** kurz: Wenig-Zeit-Modus · entlastung: Entlastungswoche · leicht: nach kurzer Nacht ein Satz weniger */
+export type WorkoutMode = 'normal' | 'kurz' | 'entlastung' | 'leicht';
 
 export interface Workout {
   id: string;
@@ -52,6 +53,26 @@ export interface ActiveWorkout extends Workout {
   /** Übungen dieses Trainings, nach Tausch, Wenig-Zeit-Modus oder Entlastung */
   slots: Slot[];
   hints: WorkoutHint[];
+}
+
+export interface WeightEntry {
+  date: DateKey;
+  kg: number;
+}
+
+/** Schlaf der Nacht vor dem Datum */
+export interface SleepEntry {
+  date: DateKey;
+  hours: number;
+  /** „HH:MM“ */
+  bed?: string;
+  wake?: string;
+}
+
+export interface GoalChange {
+  date: DateKey;
+  kcal: number;
+  reason: string;
 }
 
 export type Theme = 'dark' | 'light' | 'auto';
@@ -86,6 +107,10 @@ export interface Settings {
   times: Times;
   creatine: boolean;
   targetWeightKg: number;
+  kcalTarget: number;
+  proteinTarget: number;
+  /** Änderungen am Kalorienziel durch die Steuerung, älteste zuerst */
+  goalHistory: GoalChange[];
   guidedWorkoutSeen: boolean;
   lastBackupAt: number | null;
 }
@@ -110,6 +135,9 @@ export const DEFAULT_SETTINGS: Settings = {
   },
   creatine: true,
   targetWeightKg: 60,
+  kcalTarget: 2800,
+  proteinTarget: 120,
+  goalHistory: [],
   guidedWorkoutSeen: false,
   lastBackupAt: null,
 };
@@ -124,5 +152,6 @@ export function withDefaults(stored: Partial<Settings> | undefined | null): Sett
     profile: { ...base.profile, ...(stored.profile ?? {}) },
     times: { ...base.times, ...(stored.times ?? {}) },
     dumbbellSteps: stored.dumbbellSteps?.length ? [...stored.dumbbellSteps] : base.dumbbellSteps,
+    goalHistory: Array.isArray(stored.goalHistory) ? [...stored.goalHistory] : base.goalHistory,
   };
 }

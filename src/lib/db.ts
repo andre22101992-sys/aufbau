@@ -2,7 +2,7 @@
 // damit vorhandene Daten bei einem App-Update erhalten bleiben.
 
 import { openDB, type DBSchema, type IDBPDatabase, type IDBPTransaction, type StoreNames } from 'idb';
-import type { Workout } from './model';
+import type { SleepEntry, WeightEntry, Workout } from './model';
 
 export const DB_NAME = 'aufbau';
 
@@ -11,8 +11,8 @@ export interface AufbauSchema extends DBSchema {
   drafts: { key: string; value: unknown };
   overrides: { key: string; value: unknown };
   workouts: { key: string; value: Workout; indexes: { byDate: string } };
-  weights: { key: string; value: { date: string; kg: number } };
-  sleep: { key: string; value: { date: string; hours: number } };
+  weights: { key: string; value: WeightEntry };
+  sleep: { key: string; value: SleepEntry };
   meals: { key: string; value: { date: string } & Record<string, unknown> };
   shopping: { key: string; value: { week: string } & Record<string, unknown> };
   stock: { key: string; value: { foodId: string } & Record<string, unknown> };

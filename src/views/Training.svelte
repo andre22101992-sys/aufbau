@@ -32,6 +32,13 @@
 
   const minutesFor = (dayId: DayId) => estimateMinutes(slotsFor(block.id, dayId, 'normal'), getExercise, app.settings.supersets);
 
+  const MODE_NOTES: Record<WorkoutMode, string> = {
+    normal: '',
+    kurz: ', Kurzversion',
+    entlastung: ', leichte Woche',
+    leicht: ', ein Satz weniger',
+  };
+
   const stateText: Record<DayState, string> = {
     done: 'erledigt',
     today: 'heute',
@@ -105,7 +112,7 @@
       {#each history as w (w.id)}
         <button class="row" onclick={() => (detail = w)}>
           <span class="row-grow">
-            <span class="small muted">{formatDate(w.date, 'short')}{w.mode === 'kurz' ? ', Kurzversion' : w.mode === 'entlastung' ? ', leichte Woche' : ''}</span><br />
+            <span class="small muted">{formatDate(w.date, 'short')}{MODE_NOTES[w.mode]}</span><br />
             {DAY_TITLES[w.dayId]}
           </span>
           <span class="small muted num">{formatDuration((w.finishedAt ?? w.startedAt) - w.startedAt)}</span>

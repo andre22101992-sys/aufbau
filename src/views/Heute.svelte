@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getExercise } from '../data/exercises';
   import Icon from '../components/Icon.svelte';
+  import MorningCheck from '../components/MorningCheck.svelte';
   import TodayTraining from '../components/TodayTraining.svelte';
   import WeekStrip from '../components/WeekStrip.svelte';
   import { deloadAdvice, isStagnating } from '../lib/blocks';
@@ -43,6 +44,8 @@
     </div>
     <a class="icon-btn" href="#/einstellungen" aria-label="Einstellungen"><Icon name="settings" /></a>
   </header>
+
+  <MorningCheck />
 
   <TodayTraining />
 
@@ -93,7 +96,7 @@
   {/if}
 
   <section class="card soon">
-    <p class="small muted">Mahlzeiten, Gewicht und Schlaf kommen mit den nächsten Updates in diese Übersicht.</p>
+    <p class="small muted">Mahlzeiten, Einkauf und dein Tagesablauf kommen mit den nächsten Updates in diese Übersicht.</p>
   </section>
 </div>
 

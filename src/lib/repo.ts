@@ -2,7 +2,7 @@
 // Wichtig: Svelte-Zustände vor dem Speichern mit $state.snapshot in normale Objekte verwandeln.
 
 import { STORE_NAMES, getDB } from './db';
-import { withDefaults, type ActiveWorkout, type Settings, type Workout } from './model';
+import { withDefaults, type ActiveWorkout, type Settings, type SleepEntry, type WeightEntry, type Workout } from './model';
 
 const SETTINGS_KEY = 'main';
 const ACTIVE_WORKOUT_KEY = 'activeWorkout';
@@ -31,6 +31,32 @@ export async function saveWorkout(workout: Workout): Promise<void> {
 export async function deleteWorkout(id: string): Promise<void> {
   const db = await getDB();
   await db.delete('workouts', id);
+}
+
+/** Gewichte nach Datum sortiert (der Schlüssel „JJJJ-MM-TT“ sortiert von selbst richtig) */
+export async function listWeights(): Promise<WeightEntry[]> {
+  const db = await getDB();
+  return db.getAll('weights');
+}
+
+export async function saveWeight(entry: WeightEntry): Promise<void> {
+  const db = await getDB();
+  await db.put('weights', entry);
+}
+
+export async function deleteWeight(date: string): Promise<void> {
+  const db = await getDB();
+  await db.delete('weights', date);
+}
+
+export async function listSleep(): Promise<SleepEntry[]> {
+  const db = await getDB();
+  return db.getAll('sleep');
+}
+
+export async function saveSleep(entry: SleepEntry): Promise<void> {
+  const db = await getDB();
+  await db.put('sleep', entry);
 }
 
 export async function loadActiveWorkout(): Promise<ActiveWorkout | null> {

@@ -13,6 +13,7 @@
   import Fortschritt from './views/Fortschritt.svelte';
   import Heute from './views/Heute.svelte';
   import Kochmodus from './views/Kochmodus.svelte';
+  import KiRezept from './views/KiRezept.svelte';
   import Rezept from './views/Rezept.svelte';
   import IphoneTest from './views/IphoneTest.svelte';
   import Onboarding from './views/Onboarding.svelte';
@@ -66,6 +67,8 @@
       <Training />
     {:else if segments[0] === 'essen' && segments[1] === 'rezept' && segments[2]}
       {#key segments[2]}<Rezept id={segments[2]} />{/key}
+    {:else if segments[0] === 'essen' && segments[1] === 'ki'}
+      {#key segments[2]}<KiRezept mode={segments[2] === 'umwandeln' ? 'umwandeln' : 'neu'} />{/key}
     {:else if segments[0] === 'essen' && segments[1] === 'kochen' && segments[2]}
       <Kochmodus id={segments[2]} portions={Number(segments[3]) || 2} />
     {:else if segments[0] === 'essen'}

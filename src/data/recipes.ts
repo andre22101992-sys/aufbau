@@ -159,3 +159,14 @@ export function getRecipe(id: string): Recipe {
   if (!recipe) throw new Error(`Unbekanntes Rezept: ${id}`);
   return recipe;
 }
+
+/** Gespeicherte eigene Rezepte (von Claude, Apple Intelligence oder umgewandelt) */
+export const CUSTOM_KEY = 'recipes:custom';
+
+export function addCustomRecipes(list: Recipe[]): void {
+  for (const recipe of list) {
+    if (RECIPE_BY_ID[recipe.id]) continue;
+    RECIPES.push(recipe);
+    RECIPE_BY_ID[recipe.id] = recipe;
+  }
+}

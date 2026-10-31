@@ -1,6 +1,9 @@
 <script lang="ts">
   // Essen: oben heute mit Ringen und Mahlzeiten zum Abhaken, darunter Wochenplan und Rezepte.
+  import AiBridge from '../components/AiBridge.svelte';
   import Icon from '../components/Icon.svelte';
+  import { photoPrompt } from '../lib/ai/prompts';
+  import { parsePhoto } from '../lib/ai/schemas';
   import Rings from '../components/Rings.svelte';
   import Sheet from '../components/Sheet.svelte';
   import { dinnerKey, dinnerOf, mealsOf, mealTime, type PlanMeal } from '../data/mealplan';
@@ -95,6 +98,23 @@
   }
 
   const PORTIONS = [0.5, 1, 1.5];
+
+  let photo = $state.raw<File | null>(null);
+  let photoInput = $state<HTMLInputElement>();
+  let photoError = $state('');
+
+  function photoAnswer(text: string): void {
+    const result = parsePhoto(text);
+    if (!result.ok) {
+      photoError = result.error;
+      return;
+    }
+    addExtra(result.value.label, Math.round(result.value.kcal), Math.round(result.value.protein));
+    showToast(`${result.value.label} eingetragen: ${Math.round(result.value.kcal)} kcal`);
+    photo = null;
+    photoError = '';
+    extraOpen = false;
+  }
 </script>
 
 <div class="screen">
@@ -192,6 +212,10 @@
   </section>
 
   <h2 class="section-title">Rezepte</h2>
+  <div class="pair2">
+    <a class="btn btn-secondary" href="#/essen/ki/neu"><Icon name="bolt" size={18} />Neues Rezept</a>
+    <a class="btn btn-secondary" href="#/essen/ki/umwandeln"><Icon name="camera" size={18} />Umwandeln</a>
+  </div>
   <div class="list">
     {#each RECIPES as recipe (recipe.id)}
       {@const n = portionOf(recipe)}
@@ -202,7 +226,7 @@
     {/each}
   </div>
   <section class="card soon">
-    <p class="small muted">Neue Rezepte über Claude und Apple Intelligence kommen mit dem nächsten Update.</p>
+    <p class="small muted">Neue Rezepte kommen auch per App-Update dazu, zum Beispiel beim Monats-Check.</p>
   </section>
 </div>
 
@@ -247,6 +271,15 @@
       <button class="btn btn-secondary" onclick={() => quick(item)}>{item.label}<span class="small muted">{item.kcal} kcal</span></button>
     {/each}
   </div>
+  <details class="photo">
+    <summary class="small">Essen per Foto mit Claude schätzen</summary>
+    <button class="btn btn-secondary btn-block" onclick={() => photoInput?.click()}><Icon name="camera" size={18} />{photo ? 'Anderes Foto' : 'Foto aufnehmen oder wählen'}</button>
+    <input bind:this={photoInput} class="sr-only" type="file" accept="image/*" onchange={(e) => (photo = e.currentTarget.files?.[0] ?? null)} />
+    {#if photo}
+      <AiBridge prompt={photoPrompt()} image={photo} onanswer={photoAnswer} />
+    {/if}
+    {#if photoError}<p class="small muted">{photoError}</p>{/if}
+  </details>
   <div class="grid2">
     <label class="field"><span>kcal</span><input class="input" inputmode="numeric" bind:value={extraKcal} placeholder="300" /></label>
     <label class="field"><span>Protein (g)</span><input class="input" inputmode="numeric" bind:value={extraProtein} placeholder="10" /></label>
@@ -350,6 +383,16 @@
     color: var(--accent-ink);
   }
 
+  .photo summary {
+    color: var(--text-2);
+    cursor: pointer;
+    min-height: 36px;
+  }
+
+  .photo {
+    margin-bottom: 12px;
+  }
+
   .quick {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -372,6 +415,12 @@
     color: var(--text-2);
     text-decoration: underline;
     padding: 4px 0;
+  }
+
+  .pair2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
   }
 
   .pair {

@@ -15,7 +15,7 @@
   import { RECENT_KEY, topRecent } from '../lib/recent';
   import { TEMPLATES_KEY, addTemplate, parseTemplates, removeTemplate } from '../lib/templates';
   import { dayPlanNutrients, mealAmounts, mealNutrients, portionOf, totalMinutes } from '../lib/nutrition';
-  import { NUTRIENT_LABELS, NUTRIENT_TARGETS, suggestFor, weekNutrients, type NutrientKey } from '../lib/suggest';
+  import { NUTRIENT_LABELS, NUTRIENT_TARGETS, freshEnough, suggestFor, weekNutrients, type NutrientKey } from '../lib/suggest';
   import { formatDecimal, parseDecimal } from '../lib/numbers';
   import { app, setOverride, showToast } from '../lib/state/app.svelte';
   import { addExtra, applyCopy, changeDrink, loadDay, loadWeek, meals, removeExtra, setPortion } from '../lib/state/meals.svelte';
@@ -314,7 +314,17 @@
         </button>
       {/each}
     </div>
-    <p class="caption muted">Nur Gerichte, die an diesem Tag noch frisch sind: Hack am Einkaufswochenende, Hähnchen bis Dienstag. Die zweite Portion gibt es am nächsten Mittag.</p>
+    <h3>Alle Rezepte</h3>
+    <div class="list plain">
+      {#each RECIPES.filter((r) => r.id !== current.id) as r (r.id)}
+        {@const fresh = freshEnough(r, swapDate)}
+        <button class="row" onclick={() => swapTo(r.id)}>
+          <span class="row-grow">{r.name}<br /><span class="small muted">{Math.round(portionOf(r).protein)} g Protein, {totalMinutes(r)} Min{fresh ? '' : ', hält an diesem Tag nicht frisch'}</span></span>
+          <Icon name="arrows-exchange" size={18} />
+        </button>
+      {/each}
+    </div>
+    <p class="caption muted">Die Vorschläge oben sind Gerichte, die an diesem Tag noch frisch sind: Hack am Einkaufswochenende, Hähnchen bis Dienstag. Unter „Alle Rezepte“ siehst du alles, auch was an dem Tag nicht lange hält. Die zweite Portion gibt es am nächsten Mittag.</p>
   {/if}
 </Sheet>
 

@@ -7,6 +7,7 @@
   import TodayTraining from '../components/TodayTraining.svelte';
   import WeekStrip from '../components/WeekStrip.svelte';
   import { deloadAdvice, isStagnating } from '../lib/blocks';
+  import { checkinDue } from '../lib/checkin';
   import { formatDate, todayKey, weekStart, weekday } from '../lib/dates';
   import { plannedDay } from '../lib/plan';
   import { trainingStreak } from '../lib/streaks';
@@ -31,6 +32,8 @@
   const backupDue = $derived(
     app.workouts.length >= 3 && (!app.settings.lastBackupAt || Date.now() - app.settings.lastBackupAt > 28 * 86_400_000),
   );
+
+  const checkin = $derived(checkinDue(app.checkins, app.settings.startDate, today));
 
   async function startDeload(): Promise<void> {
     await setOverride(deloadKey(today), true);
@@ -98,6 +101,17 @@
     </section>
   {/if}
 
+  {#if checkin.due}
+    <a class="card stack checkin-card" href="#/fortschritt/checkin">
+      <h2>{checkin.daysSince === null ? 'Dein Ausgangspunkt' : 'Zeit für den Check-in'}</h2>
+      <p class="muted small">
+        {checkin.daysSince === null
+          ? 'Mach jetzt Maße und Fotos, dann siehst du später den Unterschied.'
+          : 'Seit 4 Wochen gab es keine neuen Maße und Fotos. Das dauert ein paar Minuten.'}
+      </p>
+    </a>
+  {/if}
+
   {#if backupDue}
     <section class="card stack">
       <h2>Sichere deine Daten</h2>
@@ -142,6 +156,11 @@
     color: inherit;
     text-decoration: none;
     box-shadow: inset 3px 0 0 var(--accent-ink);
+  }
+
+  .checkin-card {
+    color: inherit;
+    text-decoration: none;
   }
 
   .soon {

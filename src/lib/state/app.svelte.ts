@@ -3,6 +3,7 @@
 import { withDefaults, type ActiveWorkout, type Settings, type SleepEntry, type WeightEntry, type Workout } from '../model';
 import { CUSTOM_FOODS_KEY, addCustomFoods, type Food } from '../../data/foods';
 import { CUSTOM_KEY, addCustomRecipes, type Recipe } from '../../data/recipes';
+import type { CheckinEntry } from '../checkin';
 import type { ScaleEntry } from '../scale';
 import * as repo from '../repo';
 
@@ -20,6 +21,8 @@ export const app = $state({
   sleep: [] as SleepEntry[],
   /** Werte der Körperwaage, alle paar Wochen */
   scale: [] as ScaleEntry[],
+  /** Check-ins mit Maßen und Foto-Verweisen, alle 4 Wochen */
+  checkins: [] as CheckinEntry[],
   overrides: {} as Record<string, unknown>,
   active: null as ActiveWorkout | null,
   needRefresh: false,
@@ -27,12 +30,13 @@ export const app = $state({
 });
 
 export async function loadApp(): Promise<void> {
-  const [settings, workouts, weights, sleep, scale, overrides, active] = await Promise.all([
+  const [settings, workouts, weights, sleep, scale, checkins, overrides, active] = await Promise.all([
     repo.loadSettings(),
     repo.listWorkouts(),
     repo.listWeights(),
     repo.listSleep(),
     repo.listScale(),
+    repo.listCheckins(),
     repo.listOverrides(),
     repo.loadActiveWorkout(),
   ]);
@@ -41,6 +45,7 @@ export async function loadApp(): Promise<void> {
   app.weights = weights;
   app.sleep = sleep;
   app.scale = scale;
+  app.checkins = checkins;
   app.overrides = overrides;
   if (Array.isArray(overrides[CUSTOM_FOODS_KEY])) addCustomFoods(overrides[CUSTOM_FOODS_KEY] as Food[]);
   if (Array.isArray(overrides[CUSTOM_KEY])) addCustomRecipes(overrides[CUSTOM_KEY] as Recipe[]);

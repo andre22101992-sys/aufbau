@@ -2,6 +2,7 @@
 // Wichtig: Svelte-Zustände vor dem Speichern mit $state.snapshot in normale Objekte verwandeln.
 
 import { STORE_NAMES, getDB } from './db';
+import type { CheckinEntry, Pose } from './checkin';
 import type { ScaleEntry } from './scale';
 import type { PriceEntry, Receipt, StockEntry } from './shopping';
 import { withDefaults, type ActiveWorkout, type Settings, type SleepEntry, type WeightEntry, type Workout } from './model';
@@ -205,4 +206,37 @@ export async function saveScale(entry: ScaleEntry): Promise<void> {
 export async function deleteScale(id: string): Promise<void> {
   const db = await getDB();
   await db.delete('checkins', id);
+}
+
+// ---------- Check-ins mit Fotos (Bereiche „checkins“ und „photos“) ----------
+
+export async function listCheckins(): Promise<CheckinEntry[]> {
+  const db = await getDB();
+  const all = await db.getAll('checkins');
+  return all.filter((c) => c.kind === 'checkin').map(({ kind: _kind, ...entry }) => entry as unknown as CheckinEntry);
+}
+
+export async function saveCheckin(entry: CheckinEntry): Promise<void> {
+  const db = await getDB();
+  await db.put('checkins', { ...entry, kind: 'checkin' });
+}
+
+export async function savePhoto(id: string, date: string, pose: Pose, blob: Blob): Promise<void> {
+  const db = await getDB();
+  await db.put('photos', { id, date, pose, blob });
+}
+
+export async function getPhoto(id: string): Promise<Blob | null> {
+  const db = await getDB();
+  const entry = await db.get('photos', id);
+  return entry && entry.blob instanceof Blob ? entry.blob : null;
+}
+
+/** Löscht einen Check-in samt seinen Fotos */
+export async function deleteCheckin(entry: CheckinEntry): Promise<void> {
+  const db = await getDB();
+  const tx = db.transaction(['checkins', 'photos'], 'readwrite');
+  await tx.objectStore('checkins').delete(entry.id);
+  for (const id of Object.values(entry.photos)) if (id) await tx.objectStore('photos').delete(id);
+  await tx.done;
 }

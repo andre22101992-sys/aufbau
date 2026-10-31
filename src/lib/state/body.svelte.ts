@@ -4,6 +4,7 @@ import type { DateKey } from '../dates';
 import type { SleepEntry, WeightEntry } from '../model';
 import { roundTo } from '../numbers';
 import * as repo from '../repo';
+import { checkinId, photoId, POSES, type CheckinEntry, type MeasureKey, type Pose } from '../checkin';
 import type { ScaleEntry } from '../scale';
 import { app, saveSettingsNow } from './app.svelte';
 
@@ -57,4 +58,27 @@ export async function saveScaleEntry(entry: ScaleEntry): Promise<void> {
 export async function removeScaleEntry(entry: ScaleEntry): Promise<void> {
   await repo.deleteScale(entry.id);
   app.scale = app.scale.filter((e) => e.id !== entry.id);
+}
+
+/**
+ * Speichert den Check-in dieses Tages. Neue Fotos ersetzen die alten derselben Pose,
+ * Fotos ohne neue Aufnahme bleiben, wenn der Check-in heute schon einmal gespeichert wurde.
+ */
+export async function saveCheckinEntry(date: DateKey, values: Partial<Record<MeasureKey, number>>, shots: Partial<Record<Pose, Blob>>): Promise<void> {
+  const before = app.checkins.find((e) => e.date === date);
+  const entry: CheckinEntry = { id: checkinId(date), date, ...values, photos: { ...(before?.photos ?? {}) } };
+  for (const pose of POSES) {
+    const blob = shots[pose.id];
+    if (!blob) continue;
+    const id = photoId(date, pose.id);
+    await repo.savePhoto(id, date, pose.id, blob);
+    entry.photos[pose.id] = id;
+  }
+  await repo.saveCheckin(entry);
+  app.checkins = upsert(app.checkins, entry);
+}
+
+export async function removeCheckin(entry: CheckinEntry): Promise<void> {
+  await repo.deleteCheckin(entry);
+  app.checkins = app.checkins.filter((e) => e.id !== entry.id);
 }

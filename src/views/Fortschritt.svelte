@@ -5,6 +5,7 @@
   import Sheet from '../components/Sheet.svelte';
   import Sparkline from '../components/Sparkline.svelte';
   import WeightChart from '../components/WeightChart.svelte';
+  import { CHECKIN_INTERVAL_DAYS, MEASURES, checkinDue, measureChange, withPhoto } from '../lib/checkin';
   import { addDays, diffDays, formatDate, fromKey, todayKey, weekStart } from '../lib/dates';
   import { performanceLabel } from '../lib/format';
   import { formatDecimal } from '../lib/numbers';
@@ -79,6 +80,11 @@
     const goal = `Dein Ziel: ${app.settings.kcalTarget.toLocaleString('de-DE')} kcal und mindestens ${app.settings.proteinTarget} g Protein am Tag.`;
     return change ? `${goal} Zuletzt angepasst am ${dayMonth(change.date)}.` : goal;
   });
+
+  // Check-in
+  const lastCheckin = $derived([...app.checkins].sort((a, b) => (a.date < b.date ? 1 : -1))[0]);
+  const due = $derived(checkinDue(app.checkins, app.settings.startDate, today));
+  const canCompare = $derived(withPhoto(app.checkins, 'vorne').length >= 2 || withPhoto(app.checkins, 'seite').length >= 2 || withPhoto(app.checkins, 'hinten').length >= 2);
 
   // Körperwerte der Waage
   let scaleOpen = $state(false);
@@ -243,6 +249,29 @@
   </section>
 
   <p class="small muted">{goalText}</p>
+
+  <h2 class="section-title">Check-in</h2>
+  <section class="card stack">
+    {#if lastCheckin}
+      <p class="small muted">
+        Letzter Check-in am {formatDate(lastCheckin.date, 'short')}
+        {due.due ? 'Zeit für den nächsten.' : `Der nächste ist in etwa ${Math.max(1, CHECKIN_INTERVAL_DAYS - (due.daysSince ?? 0))} Tagen dran.`}
+      </p>
+      {#each MEASURES as m (m.key)}
+        {@const change = measureChange(app.checkins, m.key)}
+        {#if change}
+          <div class="line">
+            <span class="scale-name">{m.label}</span>
+            <span class="num"><strong>{formatDecimal(change.latest, 1, 1)} cm</strong>{#if change.sinceFirst !== null}<span class="muted">, {change.sinceFirst >= 0 ? '+' : '−'}{formatDecimal(Math.abs(change.sinceFirst), 1, 1)} seit dem Start</span>{/if}</span>
+          </div>
+        {/if}
+      {/each}
+    {:else}
+      <p class="small muted">Alle 4 Wochen Maße und drei Fotos. Mach den ersten Check-in am besten gleich am Anfang, dann siehst du später den Unterschied. Die Fotos bleiben auf diesem iPhone.</p>
+    {/if}
+    <a class="btn btn-primary" href="#/fortschritt/checkin"><Icon name="camera" size={18} />{lastCheckin ? 'Neuer Check-in' : 'Ersten Check-in machen'}</a>
+    {#if canCompare}<a class="btn btn-secondary" href="#/fortschritt/vergleich">Fotos vergleichen</a>{/if}
+  </section>
 
   <h2 class="section-title">Körperwerte der Waage</h2>
   <section class="card stack">

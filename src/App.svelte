@@ -8,6 +8,7 @@
   import { app, loadApp } from './lib/state/app.svelte';
   import { go, initRouter, router } from './lib/state/router.svelte';
   import Bon from './views/Bon.svelte';
+  import Checkin from './views/Checkin.svelte';
   import Einkauf from './views/Einkauf.svelte';
   import Samstag from './views/Samstag.svelte';
   import Scan from './views/Scan.svelte';
@@ -23,6 +24,7 @@
   import Ruhetag from './views/Ruhetag.svelte';
   import Training from './views/Training.svelte';
   import Uebung from './views/Uebung.svelte';
+  import Vergleich from './views/Vergleich.svelte';
   import Workout from './views/Workout.svelte';
 
   let loadError = $state('');
@@ -84,6 +86,10 @@
       <Samstag />
     {:else if segments[0] === 'einkauf'}
       <Einkauf />
+    {:else if segments[0] === 'fortschritt' && segments[1] === 'checkin'}
+      <Checkin />
+    {:else if segments[0] === 'fortschritt' && segments[1] === 'vergleich'}
+      <Vergleich />
     {:else if segments[0] === 'fortschritt'}
       <Fortschritt />
     {:else if import.meta.env.DEV && segments[0] === 'dev'}

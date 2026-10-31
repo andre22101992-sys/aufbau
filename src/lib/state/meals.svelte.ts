@@ -1,7 +1,9 @@
 // Abgehakte Mahlzeiten und Extras eines Tages.
 
 import { lightKey, type PlanMeal } from '../../data/mealplan';
+import type { CopyItem } from '../copyday';
 import { replacedMeals } from '../dayfood';
+import { addDrink } from '../drink';
 import { mealNutrients } from '../nutrition';
 import { RECENT_KEY, remember, type RecentExtra } from '../recent';
 import { uid } from '../platform';
@@ -51,6 +53,25 @@ export function addExtra(label: string, kcal: number, protein: number, replaces?
 export function removeExtra(id: string): void {
   if (!meals.day) return;
   meals.day.extras = meals.day.extras.filter((e) => e.id !== id);
+  persist();
+}
+
+/** Übernimmt gewählte Einträge von gestern; Extras landen auch in „Zuletzt gegessen“ */
+export function applyCopy(items: CopyItem[]): void {
+  const day = meals.day;
+  if (!day) return;
+  for (const item of items) {
+    if (item.kind === 'meal') {
+      setPortion(item.mealId, item.portion);
+    } else {
+      addExtra(item.extra.label, item.extra.kcal, item.extra.protein, item.extra.replaces);
+    }
+  }
+}
+
+export function changeDrink(ml: number): void {
+  if (!meals.day) return;
+  meals.day.drinkMl = addDrink(meals.day.drinkMl, ml);
   persist();
 }
 

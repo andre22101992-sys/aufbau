@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { getExercise } from '../data/exercises';
+  import DayWrapUp from '../components/DayWrapUp.svelte';
   import Icon from '../components/Icon.svelte';
   import MorningCheck from '../components/MorningCheck.svelte';
   import NextMeal from '../components/NextMeal.svelte';
@@ -64,6 +65,7 @@
 
   <NextMeal />
   <Rhythm />
+  <DayWrapUp />
   <MorningCheck />
 
   <TodayTraining />

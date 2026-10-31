@@ -134,12 +134,14 @@ export type DayMeals = {
   /** Zeitpunkt, an dem eine Mahlzeit abgehakt wurde */
   doneAt?: Record<string, number>;
   extras: Extra[];
+  /** Getrunkene Menge in ml (Wasser, Tee, Saft) */
+  drinkMl?: number;
 };
 
 export async function loadMeals(date: string): Promise<DayMeals> {
   const db = await getDB();
   const entry = (await db.get('meals', date)) as DayMeals | undefined;
-  return { date, done: entry?.done ?? {}, doneAt: entry?.doneAt ?? {}, extras: entry?.extras ?? [] };
+  return { date, done: entry?.done ?? {}, doneAt: entry?.doneAt ?? {}, extras: entry?.extras ?? [], drinkMl: entry?.drinkMl ?? 0 };
 }
 
 export async function saveMeals(day: DayMeals): Promise<void> {

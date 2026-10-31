@@ -10,16 +10,21 @@
   import { BASE_RECIPES, PLAN_B, RECIPES, getRecipe } from '../data/recipes';
   import { WEEKDAYS_SHORT, addDays, formatDate, todayKey, weekStart } from '../lib/dates';
   import { eatenTotals, openMeals, plannedTotals, replacedMeals } from '../lib/dayfood';
+  import { copyItems } from '../lib/copyday';
+  import { DRINK_STEPS, DRINK_TARGET_ML, drinkShare, formatLiters } from '../lib/drink';
   import { RECENT_KEY, topRecent } from '../lib/recent';
+  import { TEMPLATES_KEY, addTemplate, parseTemplates, removeTemplate } from '../lib/templates';
   import { dayPlanNutrients, mealAmounts, mealNutrients, portionOf, totalMinutes } from '../lib/nutrition';
   import { NUTRIENT_LABELS, NUTRIENT_TARGETS, suggestFor, weekNutrients, type NutrientKey } from '../lib/suggest';
   import { formatDecimal, parseDecimal } from '../lib/numbers';
   import { app, setOverride, showToast } from '../lib/state/app.svelte';
-  import { addExtra, loadDay, meals, removeExtra, setPortion } from '../lib/state/meals.svelte';
+  import { addExtra, applyCopy, changeDrink, loadDay, loadWeek, meals, removeExtra, setPortion } from '../lib/state/meals.svelte';
   import { planOptions } from '../lib/state/shop.svelte';
 
   const today = todayKey();
+  const yesterday = addDays(today, -1);
   void loadDay(today);
+  void loadWeek([yesterday]);
 
   const options = $derived(planOptions());
   const plan = $derived(mealsOf(today, options));
@@ -34,6 +39,19 @@
   const weekCost = $derived(week.reduce((sum, d) => sum + dayPlanNutrients(d, options).euro, 0));
   const nutrients = $derived(weekNutrients(today, app.overrides, app.settings.kcalTarget, app.settings.startDate));
   const NUTRIENT_KEYS = Object.keys(NUTRIENT_TARGETS) as NutrientKey[];
+
+  // Wie gestern
+  let copyOpen = $state(false);
+  let skipped = $state<string[]>([]);
+  const candidates = $derived(copyItems(meals.week[yesterday], plan, meals.day, (m) => title(m)));
+  const chosen = $derived(candidates.filter((c) => !skipped.includes(c.key)));
+
+  function copyNow(): void {
+    applyCopy(chosen);
+    showToast(`${chosen.length} ${chosen.length === 1 ? 'Eintrag' : 'Einträge'} von gestern übernommen`);
+    skipped = [];
+    copyOpen = false;
+  }
 
   // Gericht tauschen
   let swapDate = $state<string | null>(null);
@@ -73,7 +91,13 @@
     { label: 'Döner', kcal: 700, protein: 35 },
   ];
 
-  const recent = $derived(topRecent(app.overrides[RECENT_KEY], QUICK.map((q) => q.label)));
+  const templates = $derived(parseTemplates(app.overrides[TEMPLATES_KEY]));
+  const recent = $derived(topRecent(app.overrides[RECENT_KEY], [...QUICK.map((q) => q.label), ...templates.map((t) => t.label)]));
+  let saveTemplate = $state(false);
+
+  function dropTemplate(label: string): void {
+    void setOverride(TEMPLATES_KEY, removeTemplate(templates, label));
+  }
 
   function quick(item: { label: string; kcal: number; protein: number }): void {
     addExtra(item.label, item.kcal, item.protein, replaces || undefined);
@@ -88,7 +112,14 @@
       showToast('Trag die Kalorien als Zahl ein, zum Beispiel 300.');
       return;
     }
-    addExtra(extraName.trim() || 'Eigener Eintrag', Math.round(kcal), Math.round(parseDecimal(extraProtein) ?? 0), replaces || undefined);
+    const label = extraName.trim() || 'Eigener Eintrag';
+    const protein = Math.round(parseDecimal(extraProtein) ?? 0);
+    addExtra(label, Math.round(kcal), protein, replaces || undefined);
+    if (saveTemplate && extraName.trim()) {
+      void setOverride(TEMPLATES_KEY, addTemplate(templates, { label, kcal: Math.round(kcal), protein }));
+      showToast(`${label} als Vorlage gemerkt`);
+    }
+    saveTemplate = false;
     extraName = '';
     replaces = '';
     extraKcal = '';
@@ -137,6 +168,21 @@
       <p><span class="dot protein"></span><span class="num strong">{Math.round(eaten.protein)}</span> / {app.settings.proteinTarget} g Protein</p>
       <p class="muted">Geplant heute: {Math.round(planned.kcal).toLocaleString('de-DE')} kcal, {Math.round(planned.protein)} g</p>
     </div>
+  </section>
+
+  <section class="card stack drink">
+    <div class="drink-head">
+      <h2>Trinken</h2>
+      <span class="small num muted">{formatLiters(meals.day?.drinkMl ?? 0)} / {formatLiters(DRINK_TARGET_ML)}</span>
+    </div>
+    <span class="track" aria-hidden="true"><span style:width="{drinkShare(meals.day?.drinkMl) * 100}%"></span></span>
+    <div class="steps">
+      {#each DRINK_STEPS as ml (ml)}
+        <button class="btn btn-secondary" onclick={() => changeDrink(ml)}>+{ml}</button>
+      {/each}
+      <button class="btn btn-ghost" aria-label="Letzten Schluck zurücknehmen" onclick={() => changeDrink(-200)}>−200</button>
+    </div>
+    <p class="caption muted">Mengen in ml. Wasser, Tee, Saft. Milch und Shakes zählen schon bei den Mahlzeiten.</p>
   </section>
 
   <div class="list">
@@ -194,6 +240,9 @@
     <button class="btn btn-secondary" onclick={() => (extraOpen = true)}><Icon name="plus" size={18} />Extra eintragen</button>
     <button class="btn btn-ghost" onclick={() => (hungerOpen = true)}>Wenig Hunger?</button>
   </div>
+  {#if candidates.length}
+    <button class="btn btn-ghost btn-block" onclick={() => (copyOpen = true)}><Icon name="arrows-exchange" size={18} />Wie gestern eintragen</button>
+  {/if}
 
   <h2 class="section-title">Diese Woche</h2>
   <div class="list">
@@ -290,8 +339,34 @@
   <p class="small muted">Lässt du eine Mahlzeit öfter aus, tausch sie lieber dauerhaft gegen den Shake, statt sie zu überspringen.</p>
 </Sheet>
 
+<Sheet open={copyOpen} title="Wie gestern" onclose={() => (copyOpen = false)}>
+  <p class="small muted">Wähl aus, was du heute genauso gegessen hast. Nur das, was wirklich schon gegessen ist.</p>
+  <div class="list plain">
+    {#each candidates as item (item.key)}
+      <label class="row">
+        <input type="checkbox" checked={!skipped.includes(item.key)} onchange={(e) => (skipped = e.currentTarget.checked ? skipped.filter((k) => k !== item.key) : [...skipped, item.key])} />
+        <span class="row-grow">{item.label}<br /><span class="small muted">{item.kcal} kcal</span></span>
+      </label>
+    {/each}
+  </div>
+  {#snippet footer()}
+    <button class="btn btn-primary btn-block" disabled={chosen.length === 0} onclick={copyNow}>{chosen.length} übernehmen</button>
+  {/snippet}
+</Sheet>
+
 <Sheet open={extraOpen} title="Extra eintragen" onclose={() => (extraOpen = false)}>
   {@render replacePicker()}
+  {#if templates.length}
+    <h3>Meine Vorlagen</h3>
+    <div class="list plain">
+      {#each templates as t (t.label)}
+        <div class="row">
+          <button class="row-grow tpl" onclick={() => quick(t)}>{t.label}<br /><span class="small muted">{t.kcal} kcal, {t.protein} g</span></button>
+          <button class="icon-btn" aria-label="{t.label} als Vorlage löschen" onclick={() => dropTemplate(t.label)}><Icon name="x" size={18} /></button>
+        </div>
+      {/each}
+    </div>
+  {/if}
   {#if recent.length}
     <h3>Zuletzt gegessen</h3>
     <div class="quick">
@@ -316,6 +391,9 @@
     {#if photoError}<p class="small muted">{photoError}</p>{/if}
   </details>
   <label class="field"><span>Name (optional)</span><input class="input" bind:value={extraName} placeholder="z. B. Schokomüsli mit Milch" /></label>
+  {#if extraName.trim()}
+    <label class="check-row"><input type="checkbox" bind:checked={saveTemplate} />Als Vorlage merken</label>
+  {/if}
   <div class="grid2">
     <label class="field"><span>kcal</span><input class="input" inputmode="numeric" bind:value={extraKcal} placeholder="300" /></label>
     <label class="field"><span>Protein (g)</span><input class="input" inputmode="numeric" bind:value={extraProtein} placeholder="10" /></label>
@@ -510,6 +588,34 @@
 
   h3 {
     margin-top: 6px;
+  }
+
+  .drink-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .tpl {
+    text-align: left;
+    background: none;
+    color: inherit;
+    padding: 0;
+  }
+
+  .check-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    margin-bottom: 8px;
   }
 
   .soon {

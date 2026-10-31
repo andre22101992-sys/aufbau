@@ -28,3 +28,21 @@ describe('Hühnersuppe', () => {
     expect(matchFood('Suppengrün', {})).toBe('suppengruen');
   });
 });
+
+describe('Cremige Hühnersuppe', () => {
+  const soup = getRecipe('cremige-huehnersuppe');
+
+  it('hat Suppengrün und Kartoffeln, aber keine Nudeln', () => {
+    const foods = soup.ingredients.map((i) => i.food);
+    expect(foods).toEqual(expect.arrayContaining(['schenkel', 'suppengruen', 'kartoffeln', 'milch']));
+    expect(foods).not.toContain('nudeln');
+  });
+
+  it('ist eine volle Mahlzeit im Budget', () => {
+    const n = portionOf(soup);
+    expect(n.kcal).toBeGreaterThan(750);
+    expect(n.protein).toBeGreaterThan(45);
+    expect(n.euro).toBeLessThanOrEqual(2.5);
+    expect(totalMinutes(soup)).toBeLessThan(60);
+  });
+});

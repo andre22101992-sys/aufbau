@@ -37,20 +37,54 @@ export const FIXED: FixedMeal[] = [
   { id: 'spaet', time: ['21:15', '21:15'], name: 'Milch, Oats für morgen ansetzen', items: [{ food: 'milch', grams: 200 }], weekdayOnly: true },
 ];
 
-export function dinnerOf(date: DateKey): string {
-  return DINNER_BY_WEEKDAY[weekday(date)];
+export interface PlanOptions {
+  /** getauschte Gerichte, Schlüssel dinnerKey(datum) */
+  overrides?: Record<string, unknown>;
+  /** Kalorienziel; liegt es über 2.800, kommt mehr in die Oats, darunter weniger Milch */
+  kcalTarget?: number;
+}
+
+export const BASE_KCAL = 2800;
+
+export function dinnerKey(date: DateKey): string {
+  return `dinner:${date}`;
+}
+
+export function dinnerOf(date: DateKey, overrides: Record<string, unknown> = {}): string {
+  const swapped = overrides[dinnerKey(date)];
+  return typeof swapped === 'string' ? swapped : DINNER_BY_WEEKDAY[weekday(date)];
+}
+
+/** Zusatz durch die Kalorien-Steuerung: je +250 kcal 40 g Haferflocken und 150 ml Milch in die Oats, je −150 kcal 100 ml Milch weniger */
+function adjust(items: { food: string; grams: number }[], mealId: string, kcalTarget: number, weekend: boolean): { food: string; grams: number }[] {
+  const delta = kcalTarget - BASE_KCAL;
+  if (delta > 0 && mealId === 'oats') {
+    const n = Math.round(delta / 250);
+    return items.map((i) => (i.food === 'hafer' ? { ...i, grams: i.grams + 40 * n } : i.food === 'milch' ? { ...i, grams: i.grams + 150 * n } : i));
+  }
+  if (delta < 0 && mealId === (weekend ? 'oats' : 'spaet')) {
+    const n = Math.round(-delta / 150);
+    return items.map((i) => (i.food === 'milch' ? { ...i, grams: Math.max(0, i.grams - 100 * n) } : i));
+  }
+  return items;
 }
 
 /** Alle Mahlzeiten eines Tages in zeitlicher Reihenfolge */
-export function mealsOf(date: DateKey): PlanMeal[] {
+export function mealsOf(date: DateKey, options: PlanOptions = {}): PlanMeal[] {
+  const { overrides = {}, kcalTarget = BASE_KCAL } = options;
   const weekend = isWeekend(date);
   const friday = weekday(date) === 4;
   const at = (m: FixedMeal) => m.time[weekend ? 1 : 0];
   const fixed = FIXED.filter((m) => !(weekend && m.weekdayOnly)).map(
-    (m) => ({ ...m, kind: 'fixed' as const, items: weekend && m.weekendItems ? m.weekendItems : m.items, name: (weekend && m.weekendName) || m.name }),
+    (m) => ({
+      ...m,
+      kind: 'fixed' as const,
+      items: adjust(weekend && m.weekendItems ? m.weekendItems : m.items, m.id, kcalTarget, weekend),
+      name: (weekend && m.weekendName) || m.name,
+    }),
   );
-  const lunch: PlanMeal = { kind: 'dish', id: 'mittag', time: weekend ? '13:00' : '12:30', name: 'Mittag', recipeId: dinnerOf(addDays(date, -1)), leftover: true };
-  const dinner: PlanMeal = { kind: 'dish', id: 'abend', time: weekend ? '19:00' : friday ? '18:15' : '20:15', name: 'Abendessen', recipeId: dinnerOf(date), leftover: false };
+  const lunch: PlanMeal = { kind: 'dish', id: 'mittag', time: weekend ? '13:00' : '12:30', name: 'Mittag', recipeId: dinnerOf(addDays(date, -1), overrides), leftover: true };
+  const dinner: PlanMeal = { kind: 'dish', id: 'abend', time: weekend ? '19:00' : friday ? '18:15' : '20:15', name: 'Abendessen', recipeId: dinnerOf(date, overrides), leftover: false };
   const list: PlanMeal[] = [...fixed, lunch, dinner];
   const minutes = (t: string) => {
     const [h, m] = t.split(':').map(Number);

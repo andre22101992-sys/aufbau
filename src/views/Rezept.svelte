@@ -6,6 +6,10 @@
   import { crispiRounds, portionOf, portionsFor, scaleIngredients, stepText, totalMinutes } from '../lib/nutrition';
   import { formatDecimal, parseDecimal } from '../lib/numbers';
   import { goBack } from '../lib/state/router.svelte';
+  import { app, setOverride, showToast } from '../lib/state/app.svelte';
+  import { ratingKey } from '../lib/suggest';
+  import { dinnerKey } from '../data/mealplan';
+  import { todayKey } from '../lib/dates';
 
   interface Props {
     id: string;
@@ -99,6 +103,12 @@
       {/each}
     </ol>
 
+    <div class="rate" role="group" aria-label="Bewertung">
+      <button class="btn btn-ghost" class:on={app.overrides[ratingKey(recipe.id)] === 1} onclick={() => setOverride(ratingKey(recipe.id), app.overrides[ratingKey(recipe.id)] === 1 ? null : 1)}>Schmeckt mir</button>
+      <button class="btn btn-ghost" class:on={app.overrides[ratingKey(recipe.id)] === -1} onclick={() => setOverride(ratingKey(recipe.id), app.overrides[ratingKey(recipe.id)] === -1 ? null : -1)}>Nicht nochmal</button>
+      <button class="btn btn-ghost" onclick={() => { void setOverride(dinnerKey(todayKey()), recipe.id); showToast('Für heute Abend eingeplant'); }}>Heute kochen</button>
+    </div>
+
     <a class="btn btn-primary btn-block cook" href="#/essen/kochen/{recipe.id}/{portions}">
       <Icon name="tools-kitchen-2" size={20} />{allChecked ? 'Kochmodus starten' : 'Kochmodus starten, Zutaten noch nicht alle abgehakt'}
     </a>
@@ -176,5 +186,16 @@
 
   .cook {
     margin-top: 8px;
+  }
+
+  .rate {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .rate .on {
+    color: var(--accent-ink);
+    box-shadow: inset 0 0 0 1.5px var(--accent-ink);
   }
 </style>

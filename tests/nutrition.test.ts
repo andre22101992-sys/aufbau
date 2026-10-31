@@ -69,3 +69,33 @@ describe('Rezepte', () => {
     expect(formatAmount('milch', 300)).toBe('300 ml');
   });
 });
+
+describe('Tauschen, Steuerung und Nährstoffe', async () => {
+  const { suggestFor, freshEnough, weekNutrients, NUTRIENT_TARGETS } = await import('../src/lib/suggest');
+  const { dinnerKey } = await import('../src/data/mealplan');
+
+  it('schlägt nur haltbare Gerichte vor und übernimmt einen Tausch auch fürs Mittagessen am nächsten Tag', () => {
+    const wednesday = addDays(MONDAY, 2);
+    const ids = suggestFor(wednesday, {}).map((s) => s.recipe.id);
+    expect(ids).not.toContain('chili');
+    expect(ids).not.toContain('haehnchen-nudeln');
+    expect(freshEnough(getRecipe('chili'), addDays(MONDAY, 5))).toBe(true);
+    const overrides = { [dinnerKey(wednesday)]: 'eierreis' };
+    const thursday = mealsOf(addDays(MONDAY, 3), { overrides }).find((m) => m.id === 'mittag');
+    expect(thursday?.kind === 'dish' && thursday.recipeId).toBe('eierreis');
+  });
+
+  it('packt bei höherem Kalorienziel mehr in die Oats', () => {
+    const base = dayPlanNutrients(MONDAY).kcal;
+    const more = dayPlanNutrients(MONDAY, { kcalTarget: 3050 }).kcal;
+    expect(more - base).toBeGreaterThan(200);
+    expect(more - base).toBeLessThan(300);
+  });
+
+  it('erreicht im Wochenschnitt die Richtwerte der DGE', () => {
+    const n = weekNutrients(MONDAY, {}, 2800);
+    for (const key of Object.keys(NUTRIENT_TARGETS) as (keyof typeof NUTRIENT_TARGETS)[]) {
+      expect(n[key], key).toBeGreaterThanOrEqual(NUTRIENT_TARGETS[key] * 0.8);
+    }
+  });
+});

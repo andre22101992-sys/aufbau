@@ -2,6 +2,8 @@
 // In den Schritten stehen Platzhalter: {reis} wird zur passenden Menge Reis, {wasser:reis:2} zu 2 ml Wasser je Gramm Reis.
 // Jeder Schritt hat ein Gerät, eine Startminute und eine Dauer; daraus entsteht der Zeitstrahl.
 
+import { MORE_RECIPES } from './recipes-more';
+
 export type Device = 'topf' | 'crispi' | 'du';
 
 export interface Step {
@@ -141,7 +143,14 @@ export const RECIPES: Recipe[] = [
       { device: 'du', at: 19, minutes: 2, text: 'Thunfisch unterheben, Gouda darüber, halbieren. Die Büro-Box offen abkühlen lassen, dann in den Kühlschrank.' },
     ],
   },
+  ...MORE_RECIPES,
 ];
+
+/** Schnell aus dem Vorrat, wenn du nicht richtig kochen kannst */
+export const PLAN_B = ['eierreis', 'thunfisch'];
+
+/** Grundgerichte im Wechsel; die übrigen sind die Rezeptsammlung */
+export const BASE_RECIPES = ['hack', 'haehnchen', 'linsen', 'curry', 'thunfisch'];
 
 export const RECIPE_BY_ID: Record<string, Recipe> = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
 

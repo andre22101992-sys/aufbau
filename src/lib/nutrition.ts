@@ -1,7 +1,7 @@
 // Nährwerte, Kosten und Mengen: rechnet Rezepte und Tagespläne aus und passt Mengen an die Portionen an.
 
 import { getFood } from '../data/foods';
-import { mealsOf, type PlanMeal } from '../data/mealplan';
+import { mealsOf, type PlanMeal, type PlanOptions } from '../data/mealplan';
 import { getRecipe, type Recipe, type Step } from '../data/recipes';
 import type { DateKey } from './dates';
 import { formatDecimal } from './numbers';
@@ -55,8 +55,8 @@ export function mealNutrients(meal: PlanMeal): Nutrients {
   return meal.kind === 'fixed' ? nutrientsOf(meal.items) : portionOf(getRecipe(meal.recipeId));
 }
 
-export function dayPlanNutrients(date: DateKey): Nutrients {
-  return mealsOf(date).reduce((sum, meal) => add(sum, mealNutrients(meal)), ZERO);
+export function dayPlanNutrients(date: DateKey, options: PlanOptions = {}): Nutrients {
+  return mealsOf(date, options).reduce((sum, meal) => add(sum, mealNutrients(meal)), ZERO);
 }
 
 // ---------- Mengen ----------

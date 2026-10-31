@@ -37,6 +37,8 @@ export const FOODS: Food[] = [
   { id: 'tomaten', name: 'Passierte Tomaten', kcal: 33, protein: 1.4, fiber: 1.5, calcium: 15, iron: 0.6, vitaminC: 10, pack: { grams: 500, euro: 0.45, label: '500 g' } },
   { id: 'erbsen', name: 'Erbsen und Möhren, Dose', kcal: 60, protein: 3.5, fiber: 4.5, calcium: 20, iron: 1, vitaminC: 8, pack: { grams: 265, euro: 0.89, label: '1 Dose' }, unit: { name: 'Dose', plural: 'Dosen', grams: 265 } },
   { id: 'thunfisch', name: 'Thunfisch natur, Dose', kcal: 110, protein: 25, fiber: 0, calcium: 10, iron: 1, vitaminC: 0, pack: { grams: 150, euro: 1.39, label: '1 Dose' }, unit: { name: 'Dose', plural: 'Dosen', grams: 150 } },
+  { id: 'kidney', name: 'Kidneybohnen, Dose', kcal: 110, protein: 8, fiber: 7, calcium: 35, iron: 2, vitaminC: 1, pack: { grams: 250, euro: 0.69, label: '1 Dose' }, unit: { name: 'Dose', plural: 'Dosen', grams: 250 } },
+  { id: 'mais', name: 'Mais, Dose', kcal: 80, protein: 2.8, fiber: 3, calcium: 5, iron: 0.5, vitaminC: 5, pack: { grams: 285, euro: 0.79, label: '1 Dose' }, unit: { name: 'Dose', plural: 'Dosen', grams: 285 } },
   { id: 'oel', name: 'Rapsöl', kcal: 884, protein: 0, fiber: 0, calcium: 0, iron: 0, vitaminC: 0, pack: { grams: 920, euro: 1.99, label: '1 l' }, unit: { name: 'EL', plural: 'EL', grams: 10 }, basic: true },
   { id: 'bruehe', name: 'Gemüsebrühe', kcal: 0, protein: 0, fiber: 0, calcium: 0, iron: 0, vitaminC: 0, pack: { grams: 200, euro: 1.29, label: '1 Glas' }, unit: { name: 'TL', plural: 'TL', grams: 5 }, basic: true },
   { id: 'gewuerz', name: 'Gewürze', kcal: 0, protein: 0, fiber: 0, calcium: 0, iron: 0, vitaminC: 0, pack: { grams: 50, euro: 0.79, label: '1 Dose' }, unit: { name: 'TL', plural: 'TL', grams: 2 }, basic: true },

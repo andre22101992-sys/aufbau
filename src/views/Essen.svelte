@@ -3,18 +3,20 @@
   import Icon from '../components/Icon.svelte';
   import Rings from '../components/Rings.svelte';
   import Sheet from '../components/Sheet.svelte';
-  import { dinnerOf, mealsOf, mealTime, type PlanMeal } from '../data/mealplan';
-  import { RECIPES, getRecipe } from '../data/recipes';
+  import { dinnerKey, dinnerOf, mealsOf, mealTime, type PlanMeal } from '../data/mealplan';
+  import { BASE_RECIPES, PLAN_B, RECIPES, getRecipe } from '../data/recipes';
   import { WEEKDAYS_SHORT, addDays, formatDate, todayKey, weekStart } from '../lib/dates';
   import { dayPlanNutrients, mealNutrients, portionOf, totalMinutes } from '../lib/nutrition';
+  import { NUTRIENT_LABELS, NUTRIENT_TARGETS, suggestFor, weekNutrients, type NutrientKey } from '../lib/suggest';
   import { formatDecimal, parseDecimal } from '../lib/numbers';
-  import { app, showToast } from '../lib/state/app.svelte';
+  import { app, setOverride, showToast } from '../lib/state/app.svelte';
   import { addExtra, loadDay, meals, removeExtra, setPortion } from '../lib/state/meals.svelte';
 
   const today = todayKey();
   void loadDay(today);
 
-  const plan = $derived(mealsOf(today));
+  const options = $derived({ overrides: app.overrides, kcalTarget: app.settings.kcalTarget });
+  const plan = $derived(mealsOf(today, options));
   const done = $derived(meals.day?.done ?? {});
   const extras = $derived(meals.day?.extras ?? []);
 
@@ -35,9 +37,24 @@
     return { kcal, protein };
   });
 
-  const planned = $derived(dayPlanNutrients(today));
+  const planned = $derived(dayPlanNutrients(today, options));
   const week = $derived(Array.from({ length: 7 }, (_, i) => addDays(weekStart(today), i)));
-  const weekCost = $derived(week.reduce((sum, d) => sum + dayPlanNutrients(d).euro, 0));
+  const weekCost = $derived(week.reduce((sum, d) => sum + dayPlanNutrients(d, options).euro, 0));
+  const nutrients = $derived(weekNutrients(today, app.overrides, app.settings.kcalTarget));
+  const NUTRIENT_KEYS = Object.keys(NUTRIENT_TARGETS) as NutrientKey[];
+
+  // Gericht tauschen
+  let swapDate = $state<string | null>(null);
+  const suggestions = $derived(swapDate ? suggestFor(swapDate, app.overrides).slice(0, 6) : []);
+
+  async function swapTo(recipeId: string | null): Promise<void> {
+    if (!swapDate) return;
+    await setOverride(dinnerKey(swapDate), recipeId);
+    showToast(recipeId ? `${getRecipe(recipeId).name} eingeplant` : 'Wieder wie im Plan');
+    swapDate = null;
+  }
+
+  let hungerOpen = $state(false);
 
   const title = (meal: PlanMeal) => (meal.kind === 'dish' ? getRecipe(meal.recipeId).name : meal.name);
   const note = (meal: PlanMeal) => {
@@ -121,6 +138,7 @@
           <span class="small muted">{Math.round(n.kcal)} kcal, {Math.round(n.protein)} g{note(meal) ? `. ${note(meal)}` : ''}</span>
           {#if meal.kind === 'dish' && !meal.leftover}
             <br /><a class="small cook" href="#/essen/rezept/{meal.recipeId}">Rezept und Kochmodus</a>
+            <button class="small planb" onclick={() => (swapDate = today)}>Keine Zeit? Tauschen oder Plan B</button>
           {/if}
         </span>
         {#if portion}
@@ -140,36 +158,88 @@
       </div>
     {/each}
   </div>
-  <button class="btn btn-secondary" onclick={() => (extraOpen = true)}><Icon name="plus" size={18} />Extra eintragen</button>
+  <div class="pair">
+    <button class="btn btn-secondary" onclick={() => (extraOpen = true)}><Icon name="plus" size={18} />Extra eintragen</button>
+    <button class="btn btn-ghost" onclick={() => (hungerOpen = true)}>Wenig Hunger?</button>
+  </div>
 
   <h2 class="section-title">Diese Woche</h2>
   <div class="list">
     {#each week as date, i (date)}
-      {@const recipe = getRecipe(dinnerOf(date))}
-      {@const day = dayPlanNutrients(date)}
-      <a class="row" class:today={date === today} href="#/essen/rezept/{recipe.id}">
+      {@const recipe = getRecipe(dinnerOf(date, app.overrides))}
+      {@const day = dayPlanNutrients(date, options)}
+      <button class="row" class:today={date === today} onclick={() => (swapDate = date)}>
         <span class="day small num">{WEEKDAYS_SHORT[i]}</span>
         <span class="row-grow">{recipe.name}<br /><span class="small muted">Tag: {Math.round(day.kcal).toLocaleString('de-DE')} kcal, {Math.round(day.protein)} g Protein</span></span>
-        <Icon name="chevron-right" />
-      </a>
+        <Icon name="arrows-exchange" size={18} />
+      </button>
     {/each}
   </div>
   <p class="small muted">Etwa {formatDecimal(weekCost, 2, 2)} € für die Woche, ohne Öl, Brühe und Gewürze. Die Preise werden mit deinem ersten Bon genauer.</p>
+
+  <h2 class="section-title">Nährstoffe im Wochenschnitt</h2>
+  <section class="card stack">
+    {#each NUTRIENT_KEYS as key (key)}
+      {@const share = nutrients[key] / NUTRIENT_TARGETS[key]}
+      <div class="nutrient">
+        <span class="small">{NUTRIENT_LABELS[key].name}</span>
+        <span class="track" aria-hidden="true"><span class:low={share < 0.9} style:width="{Math.min(100, share * 100)}%"></span></span>
+        <span class="small num muted">{Math.round(nutrients[key])} / {NUTRIENT_TARGETS[key]} {NUTRIENT_LABELS[key].unit}</span>
+      </div>
+      {#if share < 0.9}<p class="small muted">Tipp: {NUTRIENT_LABELS[key].tip}</p>{/if}
+    {/each}
+    <p class="caption muted">Pro Tag, gemessen an den Richtwerten der DGE. Nährwerte sind Durchschnittswerte.</p>
+  </section>
 
   <h2 class="section-title">Rezepte</h2>
   <div class="list">
     {#each RECIPES as recipe (recipe.id)}
       {@const n = portionOf(recipe)}
       <a class="row" href="#/essen/rezept/{recipe.id}">
-        <span class="row-grow">{recipe.name}<br /><span class="small muted">{totalMinutes(recipe)} Min, {Math.round(n.kcal)} kcal, {Math.round(n.protein)} g, {formatDecimal(n.euro, 2, 2)} € pro Portion</span></span>
+        <span class="row-grow">{recipe.name}{#if !BASE_RECIPES.includes(recipe.id)}<span class="pill new">Sammlung</span>{/if}<br /><span class="small muted">{totalMinutes(recipe)} Min, {Math.round(n.kcal)} kcal, {Math.round(n.protein)} g, {formatDecimal(n.euro, 2, 2)} € pro Portion</span></span>
         <Icon name="chevron-right" />
       </a>
     {/each}
   </div>
   <section class="card soon">
-    <p class="small muted">Rezeptvorschläge, Hilfe bei wenig Hunger, Nährstoff-Check und neue Rezepte über Claude kommen mit dem nächsten Update.</p>
+    <p class="small muted">Neue Rezepte über Claude und Apple Intelligence kommen mit dem nächsten Update.</p>
   </section>
 </div>
+
+<Sheet open={swapDate !== null} title={swapDate ? `Abendessen am ${formatDate(swapDate, 'weekday')}` : ''} onclose={() => (swapDate = null)}>
+  {#if swapDate}
+    {@const current = getRecipe(dinnerOf(swapDate, app.overrides))}
+    <a class="row current" href="#/essen/rezept/{current.id}"><span class="row-grow">Geplant: {current.name}</span><Icon name="chevron-right" /></a>
+    {#if app.overrides[dinnerKey(swapDate)]}
+      <button class="btn btn-ghost" onclick={() => swapTo(null)}>Zurück zum Plan</button>
+    {/if}
+    <h3>Plan B, wenn es schnell gehen muss</h3>
+    <div class="list plain">
+      {#each PLAN_B.filter((id) => id !== current.id) as id (id)}
+        {@const r = getRecipe(id)}
+        <button class="row" onclick={() => swapTo(id)}><span class="row-grow">{r.name}<br /><span class="small muted">aus dem Vorrat, {totalMinutes(r)} Min</span></span><Icon name="arrows-exchange" size={18} /></button>
+      {/each}
+    </div>
+    <h3>Vorschläge</h3>
+    <div class="list plain">
+      {#each suggestions as s (s.recipe.id)}
+        <button class="row" onclick={() => swapTo(s.recipe.id)}>
+          <span class="row-grow">{s.recipe.name}<br /><span class="small muted">{s.reasons.join(', ') || `${Math.round(portionOf(s.recipe).protein)} g Protein`}</span></span>
+          <Icon name="arrows-exchange" size={18} />
+        </button>
+      {/each}
+    </div>
+    <p class="caption muted">Nur Gerichte, die an diesem Tag noch frisch sind: Hack am Einkaufswochenende, Hähnchen bis Dienstag. Die zweite Portion gibt es am nächsten Mittag.</p>
+  {/if}
+</Sheet>
+
+<Sheet open={hungerOpen} title="Wenig Hunger?" onclose={() => (hungerOpen = false)}>
+  <p>Trinken geht leichter als essen. Der Milch-Hafer-Shake liefert fast so viel wie eine Mahlzeit:</p>
+  <p class="card small">400 ml Vollmilch, 60 g zarte Haferflocken und eine Banane im Schraubglas schütteln. Etwa 590 kcal und 23 g Protein.</p>
+  <button class="btn btn-primary btn-block" onclick={() => { quick({ label: 'Milch-Hafer-Shake', kcal: 590, protein: 23 }); hungerOpen = false; }}>Shake eintragen</button>
+  <p class="small muted">Öl-Booster: 1 EL Öl im Essen bringt 90 kcal mehr, ohne dass die Portion größer wird.</p>
+  <p class="small muted">Lässt du eine Mahlzeit öfter aus, tausch sie lieber dauerhaft gegen den Shake, statt sie zu überspringen.</p>
+</Sheet>
 
 <Sheet open={extraOpen} title="Extra eintragen" onclose={() => (extraOpen = false)}>
   <div class="quick">
@@ -296,6 +366,55 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
+  }
+
+  .planb {
+    color: var(--text-2);
+    text-decoration: underline;
+    padding: 4px 0;
+  }
+
+  .pair {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+  }
+
+  .nutrient {
+    display: grid;
+    grid-template-columns: 7.5em 1fr auto;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .track {
+    height: 8px;
+    background: var(--surface-2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .track span {
+    display: block;
+    height: 100%;
+    background: var(--accent-ink);
+    border-radius: 0 4px 4px 0;
+  }
+
+  .track span.low {
+    background: var(--warn);
+  }
+
+  .new {
+    margin-left: 8px;
+  }
+
+  .plain {
+    background: var(--surface-2);
+  }
+
+  h3 {
+    margin-top: 6px;
   }
 
   .soon {

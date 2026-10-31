@@ -9,3 +9,6 @@ monats-check/
 
 # Lokale Claude-Code-Freigaben
 .claude/settings.local.json
+
+# Rohdateien aus Gemini (groß); in die App kommen die umgewandelten WebP-Dateien
+uebungen/

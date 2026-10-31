@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { animationFor } from '../data/animations';
   import { START_LOADS } from '../data/exercises';
   import { musclesFor } from '../data/figures';
   import { MUSCLE_LABELS, type Exercise } from '../data/types';
@@ -26,14 +27,24 @@
   });
   const level = $derived(current?.kind === 'level' ? current.level : undefined);
   const tech = $derived(current?.kind === 'kg' ? current.tech : undefined);
+  const animation = $derived(animationFor(exercise.id, level));
+  // Animierte Bilder lassen sich nicht anhalten; mit „Bewegung reduzieren“ zeigt die Figur Start und Ende
+  const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const videoUrl = $derived(`https://www.youtube.com/results?search_query=${encodeURIComponent(`${exercise.name} Übung richtige Ausführung`)}`);
 </script>
 
 <div class="guide">
-  <div class="visual">
-    <ExerciseFigure exerciseId={exercise.id} name={exercise.name} primary={muscles.primary} {level} {tech} />
-    <MuscleMap primary={muscles.primary} secondary={muscles.secondary} />
-  </div>
+  {#if animation && !reduced}
+    <img class="anim" src={animation} alt="So geht {exercise.name}" />
+    <div class="map-row">
+      <MuscleMap primary={muscles.primary} secondary={muscles.secondary} />
+    </div>
+  {:else}
+    <div class="visual">
+      <ExerciseFigure exerciseId={exercise.id} name={exercise.name} primary={muscles.primary} {level} {tech} />
+      <MuscleMap primary={muscles.primary} secondary={muscles.secondary} />
+    </div>
+  {/if}
 
   <p class="muscles small muted">
     Trainiert vor allem {MUSCLE_LABELS[exercise.primary]}{#if exercise.secondary.length}, hilft mit: {exercise.secondary.map((m) => MUSCLE_LABELS[m]).join(', ')}{/if}.
@@ -76,6 +87,19 @@
     grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
     gap: 8px;
     align-items: center;
+  }
+
+  .anim {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius-control);
+    background: var(--surface-2);
+  }
+
+  .map-row {
+    width: 44%;
+    margin: 0 auto;
   }
 
   h3 {

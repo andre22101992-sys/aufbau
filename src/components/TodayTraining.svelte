@@ -1,6 +1,7 @@
 <script lang="ts">
   // Karte für das heutige Training: starten, fortsetzen, erledigt, Ruhetag oder Start steht noch bevor.
   import { DAY_TITLES } from '../data/blocks';
+  import { MOBILITY_MINUTES } from '../data/mobility';
   import { getExercise } from '../data/exercises';
   import type { DayId } from '../data/types';
   import { WEEKDAYS, diffDays, formatDate, todayKey, weekday } from '../lib/dates';
@@ -85,6 +86,7 @@
     <p class="small muted">{WEEKDAYS[weekday(today)]}</p>
     <h2>Ruhetag</h2>
     <p class="muted">Deine Muskeln wachsen in der Erholung. Genieß den freien Tag.</p>
+    <a class="btn btn-secondary btn-block go" href="#/training/ruhetag"><Icon name="stretching" size={20} />Ruhetag-Programm, ca. {MOBILITY_MINUTES} Min</a>
   </div>
 {/if}
 

@@ -14,6 +14,7 @@
   import Heute from './views/Heute.svelte';
   import IphoneTest from './views/IphoneTest.svelte';
   import Onboarding from './views/Onboarding.svelte';
+  import Ruhetag from './views/Ruhetag.svelte';
   import Training from './views/Training.svelte';
   import Uebung from './views/Uebung.svelte';
   import Workout from './views/Workout.svelte';
@@ -53,6 +54,8 @@
       <Onboarding />
     {:else if segments[0] === 'training' && segments[1] === 'aktiv'}
       <Workout />
+    {:else if segments[0] === 'training' && segments[1] === 'ruhetag'}
+      <Ruhetag />
     {:else if segments[0] === 'training' && segments[1] === 'uebung' && segments[2]}
       {#key segments[2]}
         <Uebung id={segments[2]} />

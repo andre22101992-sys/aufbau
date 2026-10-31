@@ -12,6 +12,7 @@
   import { eatenTotals, openMeals, plannedTotals, replacedMeals } from '../lib/dayfood';
   import { copyItems } from '../lib/copyday';
   import { DRINK_STEPS, DRINK_TARGET_ML, drinkShare, formatLiters } from '../lib/drink';
+  import { QUICK_FOODS, quickEntry, stepAmount, type QuickFood } from '../lib/quickfood';
   import { RECENT_KEY, topRecent } from '../lib/recent';
   import { TEMPLATES_KEY, addTemplate, parseTemplates, removeTemplate } from '../lib/templates';
   import { dayPlanNutrients, mealAmounts, mealNutrients, portionOf, totalMinutes } from '../lib/nutrition';
@@ -83,9 +84,6 @@
   let extraKcal = $state('');
   let extraProtein = $state('');
   const QUICK = [
-    { label: '250 ml Milch', kcal: 160, protein: 8 },
-    { label: 'Banane', kcal: 115, protein: 1 },
-    { label: '2 Eier', kcal: 170, protein: 15 },
     { label: 'Kleiner Snack', kcal: 200, protein: 3 },
     { label: 'Süßes', kcal: 250, protein: 3 },
     { label: 'Döner', kcal: 700, protein: 35 },
@@ -97,6 +95,27 @@
 
   function dropTemplate(label: string): void {
     void setOverride(TEMPLATES_KEY, removeTemplate(templates, label));
+  }
+
+  // Lebensmittel mit Menge
+  let pick = $state<QuickFood | null>(null);
+  let pickGrams = $state(0);
+  let pickAddon = $state(0);
+  const pickEntry = $derived(pick ? quickEntry(pick, pickGrams, pickAddon) : null);
+
+  function openPick(def: QuickFood): void {
+    pick = def;
+    pickGrams = def.start;
+    pickAddon = 0;
+    extraOpen = false;
+  }
+
+  function addPick(): void {
+    if (!pickEntry) return;
+    addExtra(pickEntry.label, pickEntry.kcal, pickEntry.protein, replaces || undefined);
+    showToast(`${pickEntry.label} eingetragen`);
+    replaces = '';
+    pick = null;
   }
 
   function quick(item: { label: string; kcal: number; protein: number }): void {
@@ -364,6 +383,29 @@
   {/snippet}
 </Sheet>
 
+<Sheet open={pick !== null} title={pick ? pick.label : ''} onclose={() => (pick = null)}>
+  {#if pick && pickEntry}
+    <div class="amount">
+      <button class="btn btn-secondary" aria-label="Weniger" onclick={() => (pickGrams = stepAmount(pickGrams, pick!.step, -1, pick!.min, pick!.max))}>−</button>
+      <p class="big">{quickEntry(pick, pickGrams).label}</p>
+      <button class="btn btn-secondary" aria-label="Mehr" onclick={() => (pickGrams = stepAmount(pickGrams, pick!.step, 1, pick!.min, pick!.max))}>+</button>
+    </div>
+    {#if pick.addon}
+      <p class="small muted">Dazu {pick.addon.food === 'remoulade' ? 'Remoulade' : ''}</p>
+      <div class="amount">
+        <button class="btn btn-secondary" aria-label="Weniger Remoulade" onclick={() => (pickAddon = stepAmount(pickAddon, pick!.addon!.step, -1, 0, pick!.addon!.max))}>−</button>
+        <p class="big">{pickAddon === 0 ? 'ohne' : `${pickAddon / pick.addon.step} EL Remoulade`}</p>
+        <button class="btn btn-secondary" aria-label="Mehr Remoulade" onclick={() => (pickAddon = stepAmount(pickAddon, pick!.addon!.step, 1, 0, pick!.addon!.max))}>+</button>
+      </div>
+    {/if}
+    {@render replacePicker()}
+    <p class="small muted num">{pickEntry.kcal} kcal, {pickEntry.protein} g Protein</p>
+  {/if}
+  {#snippet footer()}
+    <button class="btn btn-primary btn-block" onclick={addPick}>Eintragen</button>
+  {/snippet}
+</Sheet>
+
 <Sheet open={extraOpen} title="Extra eintragen" onclose={() => (extraOpen = false)}>
   {@render replacePicker()}
   {#if templates.length}
@@ -384,8 +426,14 @@
         <button class="btn btn-secondary" onclick={() => quick(item)}>{item.label}<span class="small muted">{item.kcal} kcal, {item.protein} g</span></button>
       {/each}
     </div>
-    <h3>Schnellauswahl</h3>
   {/if}
+  <h3>Mit Menge</h3>
+  <div class="foods">
+    {#each QUICK_FOODS as def (def.food)}
+      <button class="btn btn-secondary" onclick={() => openPick(def)}>{def.label}</button>
+    {/each}
+  </div>
+  <h3>Schnellauswahl</h3>
   <div class="quick">
     {#each QUICK as item (item.label)}
       <button class="btn btn-secondary" onclick={() => quick(item)}>{item.label}<span class="small muted">{item.kcal} kcal</span></button>
@@ -611,6 +659,31 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 8px;
+  }
+
+  .foods {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .amount {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .amount .btn {
+    min-width: 56px;
+  }
+
+  .big {
+    text-align: center;
+    font-size: var(--fs-large);
+    font-weight: 600;
   }
 
   .tpl {

@@ -3,6 +3,7 @@ import { mealsOf } from '../src/data/mealplan';
 import { copyItems } from '../src/lib/copyday';
 import { DRINK_TARGET_ML, addDrink, drinkShare } from '../src/lib/drink';
 import { MAX_TEMPLATES, addTemplate, parseTemplates, removeTemplate } from '../src/lib/templates';
+import { QUICK_FOODS, quickEntry, stepAmount } from '../src/lib/quickfood';
 import { dayWrapUp } from '../src/lib/wrapup';
 
 const plan = mealsOf('2026-11-04', {});
@@ -60,5 +61,27 @@ describe('Tagesabschluss', () => {
   });
   it('nennt einen Tag mit vier Mahlzeiten gut', () => {
     expect(dayWrapUp({ ...base, today: 4 }).title).toContain('Guter Tag');
+  });
+});
+
+describe('Lebensmittel mit Menge', () => {
+  const eggs = QUICK_FOODS.find((q) => q.food === 'ei')!;
+
+  it('benennt Eier mit und ohne Remoulade und rechnet die Werte', () => {
+    expect(quickEntry(eggs, 120)).toEqual({ label: '2 Eier', kcal: 168, protein: 15 });
+    const withSauce = quickEntry(eggs, 120, 15);
+    expect(withSauce.label).toBe('2 Eier, 1 EL Remoulade');
+    expect(withSauce.kcal).toBe(168 + 50);
+  });
+
+  it('rechnet Milch in ml', () => {
+    const milk = QUICK_FOODS.find((q) => q.food === 'milch')!;
+    expect(quickEntry(milk, 250).label).toBe('250 ml Milch');
+  });
+
+  it('bleibt beim Hoch- und Runterzählen in den Grenzen', () => {
+    expect(stepAmount(60, 60, -1, 60, 480)).toBe(60);
+    expect(stepAmount(480, 60, 1, 60, 480)).toBe(480);
+    expect(stepAmount(120, 60, 1, 60, 480)).toBe(180);
   });
 });

@@ -12,6 +12,8 @@
   import Essen from './views/Essen.svelte';
   import Fortschritt from './views/Fortschritt.svelte';
   import Heute from './views/Heute.svelte';
+  import Kochmodus from './views/Kochmodus.svelte';
+  import Rezept from './views/Rezept.svelte';
   import IphoneTest from './views/IphoneTest.svelte';
   import Onboarding from './views/Onboarding.svelte';
   import Ruhetag from './views/Ruhetag.svelte';
@@ -43,7 +45,7 @@
   });
 
   const segments = $derived(router.path.split('/').filter(Boolean));
-  const fullscreen = $derived(segments[0] === 'start' || (segments[0] === 'training' && segments[1] === 'aktiv'));
+  const fullscreen = $derived(segments[0] === 'start' || (segments[0] === 'training' && segments[1] === 'aktiv') || (segments[0] === 'essen' && segments[1] === 'kochen'));
 </script>
 
 {#if loadError}
@@ -62,6 +64,10 @@
       {/key}
     {:else if segments[0] === 'training'}
       <Training />
+    {:else if segments[0] === 'essen' && segments[1] === 'rezept' && segments[2]}
+      {#key segments[2]}<Rezept id={segments[2]} />{/key}
+    {:else if segments[0] === 'essen' && segments[1] === 'kochen' && segments[2]}
+      <Kochmodus id={segments[2]} portions={Number(segments[3]) || 2} />
     {:else if segments[0] === 'essen'}
       <Essen />
     {:else if segments[0] === 'einkauf'}

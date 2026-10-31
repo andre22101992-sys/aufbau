@@ -112,3 +112,21 @@ export async function listOverrides(): Promise<Record<string, unknown>> {
   await tx.done;
   return result;
 }
+
+export type DayMeals = {
+  date: string;
+  /** Mahlzeit → gegessene Portion (0,5 / 1 / 1,5) */
+  done: Record<string, number>;
+  extras: { id: string; label: string; kcal: number; protein: number }[];
+};
+
+export async function loadMeals(date: string): Promise<DayMeals> {
+  const db = await getDB();
+  const entry = (await db.get('meals', date)) as DayMeals | undefined;
+  return { date, done: entry?.done ?? {}, extras: entry?.extras ?? [] };
+}
+
+export async function saveMeals(day: DayMeals): Promise<void> {
+  const db = await getDB();
+  await db.put('meals', { ...day });
+}

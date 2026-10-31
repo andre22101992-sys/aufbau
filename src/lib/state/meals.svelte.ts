@@ -21,9 +21,9 @@ export function setPortion(mealId: string, portion: number | null): void {
   persist();
 }
 
-export function addExtra(label: string, kcal: number, protein: number): void {
+export function addExtra(label: string, kcal: number, protein: number, replaces?: string): void {
   if (!meals.day) return;
-  meals.day.extras.push({ id: uid(), label, kcal, protein });
+  meals.day.extras.push({ id: uid(), label, kcal, protein, ...(replaces ? { replaces } : {}) });
   persist();
 }
 

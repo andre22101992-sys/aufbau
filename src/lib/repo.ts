@@ -114,11 +114,20 @@ export async function listOverrides(): Promise<Record<string, unknown>> {
   return result;
 }
 
+export type Extra = {
+  id: string;
+  label: string;
+  kcal: number;
+  protein: number;
+  /** ID der geplanten Mahlzeit, die dieser Eintrag ersetzt */
+  replaces?: string;
+};
+
 export type DayMeals = {
   date: string;
   /** Mahlzeit → gegessene Portion (0,5 / 1 / 1,5) */
   done: Record<string, number>;
-  extras: { id: string; label: string; kcal: number; protein: number }[];
+  extras: Extra[];
 };
 
 export async function loadMeals(date: string): Promise<DayMeals> {

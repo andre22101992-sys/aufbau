@@ -59,9 +59,9 @@ export const NUTRIENT_LABELS: Record<NutrientKey, { name: string; unit: string; 
 };
 
 /** Durchschnitt pro Tag über die Woche */
-export function weekNutrients(date: DateKey, overrides: Record<string, unknown>, kcalTarget: number): Nutrients {
+export function weekNutrients(date: DateKey, overrides: Record<string, unknown>, kcalTarget: number, startDate: DateKey | null = null): Nutrients {
   const monday = weekStart(date);
-  const days = Array.from({ length: 7 }, (_, i) => dayPlanNutrients(addDays(monday, i), { overrides, kcalTarget }));
+  const days = Array.from({ length: 7 }, (_, i) => dayPlanNutrients(addDays(monday, i), { overrides, kcalTarget, startDate }));
   const sum = days.reduce((a, d) => ({ ...a, ...Object.fromEntries(Object.keys(d).map((k) => [k, (a as never)[k] + (d as never)[k]])) }), {
     kcal: 0,
     protein: 0,

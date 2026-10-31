@@ -34,3 +34,15 @@ export async function changeKcalTarget(date: DateKey, delta: number, reason: str
   app.settings.goalHistory = [...app.settings.goalHistory, { date, kcal: app.settings.kcalTarget, reason }];
   await saveSettingsNow();
 }
+
+/** Kalorienziel selbst einstellen. Mehrere Schritte am selben Tag ergeben einen Eintrag im Verlauf. */
+export async function setKcalTarget(date: DateKey, value: number): Promise<void> {
+  const entry = { date, kcal: value, reason: 'Von dir eingestellt' };
+  const history = [...app.settings.goalHistory];
+  const last = history.at(-1);
+  if (last && last.date === date && last.reason === entry.reason) history[history.length - 1] = entry;
+  else history.push(entry);
+  app.settings.kcalTarget = value;
+  app.settings.goalHistory = history;
+  await saveSettingsNow();
+}

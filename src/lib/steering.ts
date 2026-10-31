@@ -48,7 +48,7 @@ export function steeringAdvice({ weeks, startDate, lastChange, today }: Steering
       kind: 'less',
       kcal: -150,
       reason: `Du nimmst im Schnitt ${signed(perWeek)} pro Woche zu. Über 0,5 kg ist meist zu viel Fett dabei.`,
-      how: '1 EL Öl weniger im Abendessen und 100 ml Milch weniger, zusammen etwa 150 kcal.',
+      how: '25 g Haferflocken und 90 ml Milch weniger in den Oats, zusammen etwa 150 kcal.',
     };
   }
   return { kind: 'none' };

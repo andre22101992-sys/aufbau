@@ -14,6 +14,9 @@ export interface FixedMeal {
   /** am Wochenende andere Zutaten */
   weekendItems?: { food: string; grams: number }[];
   weekendName?: string;
+  /** Hinweis unter der Mahlzeit; am Wochenende gilt weekendNote, falls vorhanden */
+  note?: string;
+  weekendNote?: string;
 }
 
 export type PlanMeal =
@@ -25,7 +28,14 @@ export const DINNER_BY_WEEKDAY = ['linsen', 'haehnchen', 'curry', 'thunfisch', '
 
 export const FIXED: FixedMeal[] = [
   { id: 'frueh', time: ['5:30', '8:30'], name: 'Milch und Banane', items: [{ food: 'milch', grams: 250 }, { food: 'banane', grams: 120 }] },
-  { id: 'oats', time: ['9:00', '10:00'], name: 'Overnight Oats', items: [{ food: 'hafer', grams: 100 }, { food: 'milch', grams: 300 }] },
+  {
+    id: 'oats',
+    time: ['9:00', '10:00'],
+    name: 'Overnight Oats',
+    items: [{ food: 'hafer', grams: 100 }, { food: 'milch', grams: 300 }],
+    weekendName: 'Haferbrei, frisch',
+    weekendNote: 'Am Wochenende frisch: 5 Minuten in der Milch quellen lassen oder kurz erwärmen',
+  },
   {
     id: 'snack',
     time: ['15:30', '16:00'],
@@ -37,7 +47,31 @@ export const FIXED: FixedMeal[] = [
   { id: 'spaet', time: ['21:15', '21:15'], name: 'Milch, Oats für morgen ansetzen', items: [{ food: 'milch', grams: 200 }], weekdayOnly: true },
 ];
 
+/** Am ersten Kochtag (dem Samstag vor dem Start) gibt es noch keine Oats und keine Reste von gestern. Dafür gibt es diese beiden. */
+const FIRST_DAY_MEALS: FixedMeal[] = [
+  {
+    id: 'oats',
+    time: ['9:00', '12:00'],
+    name: 'Milch-Hafer-Shake',
+    items: [{ food: 'milch', grams: 400 }, { food: 'hafer', grams: 60 }, { food: 'banane', grams: 120 }],
+    note: 'Heute noch keine Oats. Nach dem Einkauf im Schraubglas schütteln, langsam trinken',
+  },
+  {
+    id: 'mittag',
+    time: ['12:30', '14:00'],
+    name: 'Eier, Banane und Milch',
+    items: [{ food: 'ei', grams: 180 }, { food: 'banane', grams: 120 }, { food: 'milch', grams: 250 }],
+    note: 'Heute keine Reste von gestern',
+  },
+];
+
+export function firstCookDay(startDate: DateKey | null | undefined): DateKey | null {
+  return startDate ? addDays(startDate, -2) : null;
+}
+
 export interface PlanOptions {
+  /** Montag der ersten Trainingswoche; davor liegt der erste Kochtag */
+  startDate?: DateKey | null;
   /** getauschte Gerichte, Schlüssel dinnerKey(datum) */
   overrides?: Record<string, unknown>;
   /** Kalorienziel; liegt es über 2.800, kommt mehr in die Oats, darunter weniger Milch */
@@ -55,18 +89,16 @@ export function dinnerOf(date: DateKey, overrides: Record<string, unknown> = {})
   return typeof swapped === 'string' ? swapped : DINNER_BY_WEEKDAY[weekday(date)];
 }
 
-/** Zusatz durch die Kalorien-Steuerung: je +250 kcal 40 g Haferflocken und 150 ml Milch in die Oats, je −150 kcal 100 ml Milch weniger */
-function adjust(items: { food: string; grams: number }[], mealId: string, kcalTarget: number, weekend: boolean): { food: string; grams: number }[] {
+/**
+ * Kalorienziel: Die Oats tragen den Unterschied zu 2.800 kcal, mit Haferflocken und Milch im festen Verhältnis
+ * (40 g Haferflocken + 150 ml Milch ≈ 244 kcal). Das gilt für Aufschläge der Steuerung ebenso wie für ein selbst gewähltes Ziel.
+ */
+function adjust(items: { food: string; grams: number }[], mealId: string, kcalTarget: number): { food: string; grams: number }[] {
   const delta = kcalTarget - BASE_KCAL;
-  if (delta > 0 && mealId === 'oats') {
-    const n = Math.round(delta / 250);
-    return items.map((i) => (i.food === 'hafer' ? { ...i, grams: i.grams + 40 * n } : i.food === 'milch' ? { ...i, grams: i.grams + 150 * n } : i));
-  }
-  if (delta < 0 && mealId === (weekend ? 'oats' : 'spaet')) {
-    const n = Math.round(-delta / 150);
-    return items.map((i) => (i.food === 'milch' ? { ...i, grams: Math.max(0, i.grams - 100 * n) } : i));
-  }
-  return items;
+  if (mealId !== 'oats' || delta === 0) return items;
+  const k = delta / 244;
+  const round = (n: number, step: number) => Math.max(0, Math.round(n / step) * step);
+  return items.map((i) => (i.food === 'hafer' ? { ...i, grams: round(i.grams + 40 * k, 5) } : i.food === 'milch' ? { ...i, grams: round(i.grams + 150 * k, 10) } : i));
 }
 
 /** Alle Mahlzeiten eines Tages in zeitlicher Reihenfolge */
@@ -74,23 +106,26 @@ export function mealsOf(date: DateKey, options: PlanOptions = {}): PlanMeal[] {
   const { overrides = {}, kcalTarget = BASE_KCAL } = options;
   const weekend = isWeekend(date);
   const friday = weekday(date) === 4;
+  const firstDay = firstCookDay(options.startDate) === date;
   const at = (m: FixedMeal) => m.time[weekend ? 1 : 0];
-  const fixed = FIXED.filter((m) => !(weekend && m.weekdayOnly)).map(
-    (m) => ({
+  const source = firstDay ? [...FIXED.filter((m) => m.id !== 'oats'), ...FIRST_DAY_MEALS] : FIXED;
+  const fixed = source
+    .filter((m) => !(weekend && m.weekdayOnly))
+    .map((m) => ({
       ...m,
       kind: 'fixed' as const,
-      items: adjust(weekend && m.weekendItems ? m.weekendItems : m.items, m.id, kcalTarget, weekend),
+      items: adjust(weekend && m.weekendItems ? m.weekendItems : m.items, m.id, kcalTarget),
       name: (weekend && m.weekendName) || m.name,
-    }),
-  );
+      note: (weekend && m.weekendNote) || m.note,
+    }));
   const lunch: PlanMeal = { kind: 'dish', id: 'mittag', time: weekend ? '13:00' : '12:30', name: 'Mittag', recipeId: dinnerOf(addDays(date, -1), overrides), leftover: true };
   const dinner: PlanMeal = { kind: 'dish', id: 'abend', time: weekend ? '19:00' : friday ? '18:15' : '20:15', name: 'Abendessen', recipeId: dinnerOf(date, overrides), leftover: false };
-  const list: PlanMeal[] = [...fixed, lunch, dinner];
+  const list: PlanMeal[] = firstDay ? [...fixed, dinner] : [...fixed, lunch, dinner];
   const minutes = (t: string) => {
     const [h, m] = t.split(':').map(Number);
     return h * 60 + m;
   };
-  return list.sort((a, b) => minutes(a.kind === 'fixed' ? at(a) : a.time) - minutes(b.kind === 'fixed' ? at(b) : b.time)).map((m) =>
+  return list.sort((x, y) => minutes(x.kind === 'fixed' ? at(x) : x.time) - minutes(y.kind === 'fixed' ? at(y) : y.time)).map((m) =>
     m.kind === 'fixed' ? { ...m, time: [at(m), at(m)] as [string, string] } : m,
   );
 }

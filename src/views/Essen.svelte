@@ -9,6 +9,7 @@
   import { dinnerKey, dinnerOf, mealsOf, mealTime, type PlanMeal } from '../data/mealplan';
   import { BASE_RECIPES, PLAN_B, RECIPES, getRecipe } from '../data/recipes';
   import { WEEKDAYS_SHORT, addDays, formatDate, todayKey, weekStart } from '../lib/dates';
+  import { eatenTotals, openMeals, plannedTotals, replacedMeals } from '../lib/dayfood';
   import { dayPlanNutrients, mealNutrients, portionOf, totalMinutes } from '../lib/nutrition';
   import { NUTRIENT_LABELS, NUTRIENT_TARGETS, suggestFor, weekNutrients, type NutrientKey } from '../lib/suggest';
   import { formatDecimal, parseDecimal } from '../lib/numbers';
@@ -18,32 +19,18 @@
   const today = todayKey();
   void loadDay(today);
 
-  const options = $derived({ overrides: app.overrides, kcalTarget: app.settings.kcalTarget });
+  const options = $derived({ overrides: app.overrides, kcalTarget: app.settings.kcalTarget, startDate: app.settings.startDate });
   const plan = $derived(mealsOf(today, options));
   const done = $derived(meals.day?.done ?? {});
   const extras = $derived(meals.day?.extras ?? []);
 
-  const eaten = $derived.by(() => {
-    let kcal = 0;
-    let protein = 0;
-    for (const meal of plan) {
-      const portion = done[meal.id];
-      if (!portion) continue;
-      const n = mealNutrients(meal);
-      kcal += n.kcal * portion;
-      protein += n.protein * portion;
-    }
-    for (const e of extras) {
-      kcal += e.kcal;
-      protein += e.protein;
-    }
-    return { kcal, protein };
-  });
-
-  const planned = $derived(dayPlanNutrients(today, options));
+  const eaten = $derived(eatenTotals(plan, done, extras));
+  const planned = $derived(plannedTotals(plan, extras));
+  const replacedBy = $derived(replacedMeals(extras));
+  const open = $derived(openMeals(plan, done, extras));
   const week = $derived(Array.from({ length: 7 }, (_, i) => addDays(weekStart(today), i)));
   const weekCost = $derived(week.reduce((sum, d) => sum + dayPlanNutrients(d, options).euro, 0));
-  const nutrients = $derived(weekNutrients(today, app.overrides, app.settings.kcalTarget));
+  const nutrients = $derived(weekNutrients(today, app.overrides, app.settings.kcalTarget, app.settings.startDate));
   const NUTRIENT_KEYS = Object.keys(NUTRIENT_TARGETS) as NutrientKey[];
 
   // Gericht tauschen
@@ -62,12 +49,17 @@
   const title = (meal: PlanMeal) => (meal.kind === 'dish' ? getRecipe(meal.recipeId).name : meal.name);
   const note = (meal: PlanMeal) => {
     if (meal.kind === 'dish') return meal.leftover ? 'Zweite Portion von gestern, dampfend heiß aufwärmen' : 'Doppelte Menge kochen, eine Portion für morgen';
-    if (meal.id === 'oats' && app.settings.creatine) return 'Mit 3–5 g Kreatin';
-    return '';
+    return [meal.note, meal.id === 'oats' && app.settings.creatine ? 'Mit 3–5 g Kreatin' : ''].filter(Boolean).join('. ');
+  };
+  const titleOf = (id: string) => {
+    const meal = plan.find((m) => m.id === id);
+    return meal ? title(meal) : '';
   };
 
   // Extras
   let extraOpen = $state(false);
+  let extraName = $state('');
+  let replaces = $state('');
   let extraKcal = $state('');
   let extraProtein = $state('');
   const QUICK = [
@@ -80,7 +72,8 @@
   ];
 
   function quick(item: { label: string; kcal: number; protein: number }): void {
-    addExtra(item.label, item.kcal, item.protein);
+    addExtra(item.label, item.kcal, item.protein, replaces || undefined);
+    replaces = '';
     extraOpen = false;
     showToast(`${item.label} eingetragen`);
   }
@@ -91,7 +84,9 @@
       showToast('Trag die Kalorien als Zahl ein, zum Beispiel 300.');
       return;
     }
-    addExtra('Eigener Eintrag', Math.round(kcal), Math.round(parseDecimal(extraProtein) ?? 0));
+    addExtra(extraName.trim() || 'Eigener Eintrag', Math.round(kcal), Math.round(parseDecimal(extraProtein) ?? 0), replaces || undefined);
+    extraName = '';
+    replaces = '';
     extraKcal = '';
     extraProtein = '';
     extraOpen = false;
@@ -109,7 +104,8 @@
       photoError = result.error;
       return;
     }
-    addExtra(result.value.label, Math.round(result.value.kcal), Math.round(result.value.protein));
+    addExtra(result.value.label, Math.round(result.value.kcal), Math.round(result.value.protein), replaces || undefined);
+    replaces = '';
     showToast(`${result.value.label} eingetragen: ${Math.round(result.value.kcal)} kcal`);
     photo = null;
     photoError = '';
@@ -141,6 +137,16 @@
 
   <div class="list">
     {#each plan as meal (meal.id)}
+      {#if replacedBy.has(meal.id)}
+        <div class="row meal replaced">
+          <span class="check" aria-hidden="true"><Icon name="arrows-exchange" size={14} /></span>
+          <span class="row-grow">
+            <span class="small muted num">{mealTime(meal)}</span>
+            {title(meal)}<br />
+            <span class="small muted">Ersetzt durch {replacedBy.get(meal.id)?.label}</span>
+          </span>
+        </div>
+      {:else}
       {@const n = mealNutrients(meal)}
       {@const portion = done[meal.id]}
       <div class="row meal" class:checked={!!portion}>
@@ -169,11 +175,12 @@
           </span>
         {/if}
       </div>
+      {/if}
     {/each}
     {#each extras as extra (extra.id)}
       <div class="row meal checked">
         <span class="check on"><Icon name="plus" size={16} /></span>
-        <span class="row-grow">{extra.label}<br /><span class="small muted">{extra.kcal} kcal, {extra.protein} g</span></span>
+        <span class="row-grow">{extra.label}<br /><span class="small muted">{extra.kcal} kcal, {extra.protein} g{#if extra.replaces}. Statt {titleOf(extra.replaces)}{/if}</span></span>
         <button class="icon-btn" aria-label="{extra.label} entfernen" onclick={() => removeExtra(extra.id)}><Icon name="x" size={18} /></button>
       </div>
     {/each}
@@ -257,15 +264,29 @@
   {/if}
 </Sheet>
 
+{#snippet replacePicker()}
+  {#if open.length}
+    <label class="field">
+      <span>Ersetzt das eine geplante Mahlzeit?</span>
+      <select class="input" bind:value={replaces}>
+        <option value="">Nein, zusätzlich</option>
+        {#each open as m (m.id)}<option value={m.id}>{mealTime(m)} {title(m)}</option>{/each}
+      </select>
+    </label>
+  {/if}
+{/snippet}
+
 <Sheet open={hungerOpen} title="Wenig Hunger?" onclose={() => (hungerOpen = false)}>
   <p>Trinken geht leichter als essen. Der Milch-Hafer-Shake liefert fast so viel wie eine Mahlzeit:</p>
   <p class="card small">400 ml Vollmilch, 60 g zarte Haferflocken und eine Banane im Schraubglas schütteln. Etwa 590 kcal und 23 g Protein.</p>
+  {@render replacePicker()}
   <button class="btn btn-primary btn-block" onclick={() => { quick({ label: 'Milch-Hafer-Shake', kcal: 590, protein: 23 }); hungerOpen = false; }}>Shake eintragen</button>
   <p class="small muted">Öl-Booster: 1 EL Öl im Essen bringt 90 kcal mehr, ohne dass die Portion größer wird.</p>
   <p class="small muted">Lässt du eine Mahlzeit öfter aus, tausch sie lieber dauerhaft gegen den Shake, statt sie zu überspringen.</p>
 </Sheet>
 
 <Sheet open={extraOpen} title="Extra eintragen" onclose={() => (extraOpen = false)}>
+  {@render replacePicker()}
   <div class="quick">
     {#each QUICK as item (item.label)}
       <button class="btn btn-secondary" onclick={() => quick(item)}>{item.label}<span class="small muted">{item.kcal} kcal</span></button>
@@ -280,6 +301,7 @@
     {/if}
     {#if photoError}<p class="small muted">{photoError}</p>{/if}
   </details>
+  <label class="field"><span>Name (optional)</span><input class="input" bind:value={extraName} placeholder="z. B. Schokomüsli mit Milch" /></label>
   <div class="grid2">
     <label class="field"><span>kcal</span><input class="input" inputmode="numeric" bind:value={extraKcal} placeholder="300" /></label>
     <label class="field"><span>Protein (g)</span><input class="input" inputmode="numeric" bind:value={extraProtein} placeholder="10" /></label>
@@ -344,6 +366,16 @@
   .check.on {
     background: var(--accent);
     box-shadow: none;
+  }
+
+  .replaced {
+    opacity: 0.7;
+  }
+
+  .replaced .check {
+    box-shadow: none;
+    background: var(--surface-3);
+    color: var(--text-2);
   }
 
   .cook {

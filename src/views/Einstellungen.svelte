@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import Icon from '../components/Icon.svelte';
   import Sheet from '../components/Sheet.svelte';
+  import Stepper from '../components/Stepper.svelte';
   import { BackupError, backupFileName, createBackup, parseBackup, restoreBackup, type BackupFile } from '../lib/backup';
   import { formatDate, todayKey, weekStart } from '../lib/dates';
   import { getDB } from '../lib/db';
@@ -12,6 +13,7 @@
   import { REMINDERS, reminderEvents, type ReminderId } from '../lib/reminders';
   import { clearAllData } from '../lib/repo';
   import { app, loadApp, saveSettings, showToast } from '../lib/state/app.svelte';
+  import { setKcalTarget } from '../lib/state/body.svelte';
   import { goBack } from '../lib/state/router.svelte';
   import { APP_VERSION } from '../lib/version';
 
@@ -169,6 +171,18 @@
     </div>
   </section>
 
+  <h2 class="section-title">Ziele</h2>
+  <section class="card stack">
+    <div class="goal">
+      <span class="row-grow">Kalorien pro Tag<br /><span class="small muted">Der Plan passt die Oats an</span></span>
+      <Stepper value={app.settings.kcalTarget} label="Kalorienziel" step={50} min={2400} max={3400} unit="kcal" onchange={(v) => setKcalTarget(todayKey(), v)} />
+    </div>
+    <p class="small muted">
+      Fällt dir das Essen am Anfang schwer, starte bei 2.500 und steigere dich alle zwei Wochen um 150 bis 250 kcal. Das Protein-Ziel bleibt bei mindestens
+      {app.settings.proteinTarget} g.
+    </p>
+  </section>
+
   <h2 class="section-title">Training</h2>
   <section class="card stack">
     <label class="field">
@@ -284,6 +298,12 @@
 <style>
   .top {
     margin: 0 -8px -8px;
+  }
+
+  .goal {
+    display: flex;
+    align-items: center;
+    gap: 12px;
   }
 
   .grid3 {

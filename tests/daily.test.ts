@@ -142,3 +142,28 @@ describe('Aufnahme der letzten Tage', () => {
     expect(intakeSummary(['2026-11-05'], {}).avgKcal).toBeNull();
   });
 });
+
+import { describeItem, mealAmounts } from '../src/lib/nutrition';
+
+describe('Mengen bei den Mahlzeiten', () => {
+  it('nennt für jede feste Mahlzeit, wie viel du isst', () => {
+    const first = mealsOf(SATURDAY, { startDate: MONDAY });
+    expect(mealAmounts(first.find((m) => m.id === 'mittag')!)).toBe('3 Eier, 1 Banane, 250 ml Milch');
+    expect(mealAmounts(first.find((m) => m.id === 'oats')!)).toBe('400 ml Milch, 60 g Haferflocken, 1 Banane');
+    expect(mealAmounts(first.find((m) => m.id === 'snack')!)).toBe('2 Eier, 1 EL Remoulade');
+    expect(mealAmounts(mealsOf(MONDAY).find((m) => m.id === 'frueh')!)).toBe('250 ml Milch, 1 Banane');
+    expect(mealAmounts(mealsOf(MONDAY).find((m) => m.id === 'snack')!)).toBe('2 Eier, 30 g Gouda');
+  });
+
+  it('beschreibt Gerichte als Portion', () => {
+    const monday = mealsOf(MONDAY);
+    expect(mealAmounts(monday.find((m) => m.id === 'abend')!)).toContain('1 Portion');
+    expect(mealAmounts(monday.find((m) => m.id === 'mittag')!)).toContain('aus der Box');
+  });
+
+  it('setzt hinter Maßeinheiten den Namen und lässt gezählte Dinge allein', () => {
+    expect(describeItem('ei', 120)).toBe('2 Eier');
+    expect(describeItem('oel', 20)).toBe('2 EL Öl');
+    expect(describeItem('hafer', 100)).toBe('100 g Haferflocken');
+  });
+});

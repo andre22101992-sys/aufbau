@@ -11,7 +11,7 @@
   import { WEEKDAYS_SHORT, addDays, formatDate, todayKey, weekStart } from '../lib/dates';
   import { eatenTotals, openMeals, plannedTotals, replacedMeals } from '../lib/dayfood';
   import { RECENT_KEY, topRecent } from '../lib/recent';
-  import { dayPlanNutrients, mealNutrients, portionOf, totalMinutes } from '../lib/nutrition';
+  import { dayPlanNutrients, mealAmounts, mealNutrients, portionOf, totalMinutes } from '../lib/nutrition';
   import { NUTRIENT_LABELS, NUTRIENT_TARGETS, suggestFor, weekNutrients, type NutrientKey } from '../lib/suggest';
   import { formatDecimal, parseDecimal } from '../lib/numbers';
   import { app, setOverride, showToast } from '../lib/state/app.svelte';
@@ -165,6 +165,7 @@
         <span class="row-grow">
           <span class="small muted num">{mealTime(meal)}</span>
           {title(meal)}<br />
+          <span class="small">{mealAmounts(meal)}</span><br />
           <span class="small muted">{Math.round(n.kcal)} kcal, {Math.round(n.protein)} g{note(meal) ? `. ${note(meal)}` : ''}</span>
           {#if meal.kind === 'dish' && !meal.leftover}
             <br /><a class="small cook" href="#/essen/rezept/{meal.recipeId}">Rezept und Kochmodus</a>

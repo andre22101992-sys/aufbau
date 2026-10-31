@@ -6,7 +6,7 @@
   import { getRecipe } from '../data/recipes';
   import { todayKey } from '../lib/dates';
   import { eatenTotals, openMeals, plannedTotals } from '../lib/dayfood';
-  import { mealNutrients } from '../lib/nutrition';
+  import { mealAmounts, mealNutrients } from '../lib/nutrition';
   import { eveningRescue, gapNotice, inTime, lastEatenAt, mealCount, mealMinutes, minutesOf, sinceText } from '../lib/rhythm';
   import { app, showToast } from '../lib/state/app.svelte';
   import { clock, useClock } from '../lib/state/clock.svelte';
@@ -113,6 +113,7 @@
   {#if next && nutrition}
     <p class="small muted">{light ? 'Leichter Tag. ' : ''}{when}</p>
     <h2>{mealTime(next)} {title(next)}</h2>
+    <p class="amounts">{mealAmounts(next)}</p>
     <p class="muted num">{Math.round(nutrition.kcal)} kcal, {Math.round(nutrition.protein)} g Protein</p>
     {#if since}<p class="small since" class:long={longPause}>{since}</p>{/if}
     {#if note}<p class="small muted">{note}</p>{/if}
@@ -192,6 +193,11 @@
   .light-row {
     display: flex;
     justify-content: center;
+  }
+
+  .amounts {
+    font-size: var(--fs-body);
+    line-height: 1.4;
   }
 
   .since {

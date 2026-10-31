@@ -73,6 +73,33 @@ export function formatAmount(foodId: string, grams: number): string {
   return `${rounded.toLocaleString('de-DE')} ${unit?.name === 'ml' ? 'ml' : 'g'}`;
 }
 
+const SHORT_NAMES: Record<string, string> = {
+  milch: 'Milch',
+  hafer: 'Haferflocken',
+  gouda: 'Gouda',
+  remoulade: 'Remoulade',
+  nudeln: 'Nudeln',
+  reis: 'Reis',
+  oel: 'Öl',
+};
+
+/** Maßeinheiten, hinter denen der Name des Lebensmittels stehen muss („1 EL Remoulade“, aber „3 Eier“) */
+const MEASURE_UNITS = new Set(['EL', 'TL', 'Dose', 'Bund', 'ml']);
+
+/** „3 Eier“, „250 ml Milch“, „1 EL Remoulade“, „100 g Haferflocken“ */
+export function describeItem(foodId: string, grams: number): string {
+  const food = getFood(foodId);
+  const amount = formatAmount(foodId, grams);
+  if (food.unit && !MEASURE_UNITS.has(food.unit.name)) return amount;
+  return `${amount} ${SHORT_NAMES[foodId] ?? food.name}`;
+}
+
+/** Was du für diese Mahlzeit auf den Teller bringst */
+export function mealAmounts(meal: PlanMeal): string {
+  if (meal.kind === 'fixed') return meal.items.map((i) => describeItem(i.food, i.grams)).join(', ');
+  return meal.leftover ? '1 Portion, die zweite aus der Box' : '1 Portion von dem, was du kochst';
+}
+
 export interface ScaledIngredient {
   food: string;
   name: string;

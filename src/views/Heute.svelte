@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { getExercise } from '../data/exercises';
   import Icon from '../components/Icon.svelte';
   import MorningCheck from '../components/MorningCheck.svelte';
@@ -13,9 +14,11 @@
   import { trainingStreak } from '../lib/streaks';
   import { weekOverview } from '../lib/week';
   import { app, setOverride, showToast } from '../lib/state/app.svelte';
+  import { checkAchievements } from '../lib/state/trophies.svelte';
   import { deloadKey, historyOf, isDeloadWeek, ladderFor } from '../lib/state/workout.svelte';
 
   const today = todayKey();
+  onMount(() => checkAchievements());
   const skipKey = `deload-skip:${weekStart(today)}`;
 
   const planned = $derived(plannedDay(today, app.settings.startDate));

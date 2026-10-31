@@ -4,6 +4,7 @@ import type { DateKey } from '../dates';
 import type { SleepEntry, WeightEntry } from '../model';
 import { roundTo } from '../numbers';
 import * as repo from '../repo';
+import { checkAchievements } from './trophies.svelte';
 import { checkinId, photoId, POSES, type CheckinEntry, type MeasureKey, type Pose } from '../checkin';
 import type { ScaleEntry } from '../scale';
 import { app, saveSettingsNow } from './app.svelte';
@@ -17,6 +18,7 @@ export async function saveWeight(date: DateKey, kg: number): Promise<void> {
   const entry: WeightEntry = { date, kg: roundTo(kg, 1) };
   await repo.saveWeight(entry);
   app.weights = upsert(app.weights, entry);
+  checkAchievements();
 }
 
 export async function removeWeight(date: DateKey): Promise<void> {
@@ -53,6 +55,7 @@ export async function setKcalTarget(date: DateKey, value: number): Promise<void>
 export async function saveScaleEntry(entry: ScaleEntry): Promise<void> {
   await repo.saveScale(entry);
   app.scale = upsert(app.scale, entry);
+  checkAchievements();
 }
 
 export async function removeScaleEntry(entry: ScaleEntry): Promise<void> {
@@ -76,6 +79,7 @@ export async function saveCheckinEntry(date: DateKey, values: Partial<Record<Mea
   }
   await repo.saveCheckin(entry);
   app.checkins = upsert(app.checkins, entry);
+  checkAchievements();
 }
 
 export async function removeCheckin(entry: CheckinEntry): Promise<void> {

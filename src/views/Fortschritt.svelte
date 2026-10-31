@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { getExercise } from '../data/exercises';
   import Icon from '../components/Icon.svelte';
+  import Rings from '../components/Rings.svelte';
   import Sheet from '../components/Sheet.svelte';
   import Sparkline from '../components/Sparkline.svelte';
   import WeightChart from '../components/WeightChart.svelte';
@@ -13,10 +14,12 @@
   import { bestOfLog, compare, type Performance } from '../lib/records';
   import { SCALE_FIELDS, parseScaleInput, scaleChange, scaleSeries, type ScaleKey } from '../lib/scale';
   import { formatSleep } from '../lib/sleep';
-  import { intakeSummary } from '../lib/intake';
+  import { ACHIEVEMENTS, weekDates } from '../lib/achievements';
+  import { intakeSummary, proteinDays } from '../lib/intake';
   import { GOOD_DAY_MEALS } from '../lib/rhythm';
   import { steeringAdvice } from '../lib/steering';
   import { trainingStreak } from '../lib/streaks';
+  import { workoutsInWeek } from '../lib/week';
   import { forecastDate, tempoPerWeek, trendSeries, weeklyAverages } from '../lib/trend';
   import { app, setOverride, showToast } from '../lib/state/app.svelte';
   import { loadWeek, meals } from '../lib/state/meals.svelte';
@@ -80,6 +83,21 @@
     const goal = `Dein Ziel: ${app.settings.kcalTarget.toLocaleString('de-DE')} kcal und mindestens ${app.settings.proteinTarget} g Protein am Tag.`;
     return change ? `${goal} Zuletzt angepasst am ${dayMonth(change.date)}.` : goal;
   });
+
+  // Wochenringe: diese Woche bis heute
+  const thisWeek = weekDates(today);
+  onMount(() => void loadWeek(thisWeek));
+  const ringTrainings = $derived(workoutsInWeek(app.workouts, today).length);
+  const ringProtein = $derived(proteinDays(thisWeek, meals.week, planOptions(), app.settings.proteinTarget));
+  const ringSleep = $derived(app.sleep.filter((s) => thisWeek.includes(s.date) && s.hours >= 7).length);
+
+  // Erfolge
+  const unlockedCount = $derived(ACHIEVEMENTS.filter((a) => a.id in app.achievements).length);
+  const GROUPS = [
+    { id: 'essen', label: 'Essen' },
+    { id: 'training', label: 'Training' },
+    { id: 'koerper', label: 'Körper' },
+  ] as const;
 
   // Check-in
   const lastCheckin = $derived([...app.checkins].sort((a, b) => (a.date < b.date ? 1 : -1))[0]);
@@ -151,6 +169,23 @@
       <span class="value">{planned.beforeStart ? 0 : planned.week}</span>
     </div>
   </div>
+
+  <h2 class="section-title">Diese Woche</h2>
+  <section class="card rings-card">
+    <Rings
+      size={96}
+      rings={[
+        { value: ringTrainings, target: 5, color: 'var(--accent-ink)' },
+        { value: ringProtein, target: 7, color: 'var(--protein)' },
+        { value: ringSleep, target: 7, color: 'var(--text-2)' },
+      ]}
+    />
+    <ul class="ring-legend">
+      <li><span class="dot" style:background="var(--accent-ink)"></span><span class="num strong">{ringTrainings}/5</span> Trainings</li>
+      <li><span class="dot" style:background="var(--protein)"></span><span class="num strong">{ringProtein}/7</span> Tage mit {app.settings.proteinTarget} g Protein</li>
+      <li><span class="dot" style:background="var(--text-2)"></span><span class="num strong">{ringSleep}/7</span> Nächte mit 7 h Schlaf</li>
+    </ul>
+  </section>
 
   <h2 class="section-title">Gewicht</h2>
   {#if latest}
@@ -336,9 +371,20 @@
     <p class="muted small">Nach deinem ersten Training stehen hier deine Bestwerte.</p>
   {/if}
 
-  <section class="card soon">
-    <p class="small muted">Check-ins mit Fotos, Erfolge und Wochenringe kommen mit den nächsten Updates.</p>
-  </section>
+  <h2 class="section-title">Erfolge, {unlockedCount} von {ACHIEVEMENTS.length}</h2>
+  {#each GROUPS as group (group.id)}
+    <p class="small muted group-label">{group.label}</p>
+    <div class="trophies">
+      {#each ACHIEVEMENTS.filter((a) => a.group === group.id) as a (a.id)}
+        {@const date = app.achievements[a.id]}
+        <div class="trophy" class:locked={!date}>
+          <span class="medal" aria-hidden="true"><Icon name={date ? 'trophy' : 'circle'} size={20} /></span>
+          <span class="t-title">{a.title}</span>
+          <span class="caption muted">{date ? formatDate(date, 'short') : a.detail}</span>
+        </div>
+      {/each}
+    </div>
+  {/each}
 </div>
 
 <Sheet open={scaleOpen} title="Waagenwerte eintragen" onclose={() => (scaleOpen = false)}>
@@ -456,6 +502,67 @@
     background: var(--warn);
   }
 
+  .rings-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .ring-legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: var(--fs-small);
+  }
+
+  .ring-legend .dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    margin-right: 8px;
+  }
+
+  .group-label {
+    margin: 4px 2px -4px;
+  }
+
+  .trophies {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .trophy {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px;
+    background: var(--surface-1);
+    border-radius: var(--radius-card, 14px);
+  }
+
+  .trophy.locked {
+    opacity: 0.7;
+  }
+
+  .medal {
+    color: var(--accent-ink);
+    margin-bottom: 2px;
+  }
+
+  .trophy.locked .medal {
+    color: var(--text-3);
+  }
+
+  .t-title {
+    font-weight: 600;
+    font-size: var(--fs-small);
+  }
+
   .scale-row {
     display: grid;
     grid-template-columns: 7.2em auto minmax(0, 1fr) 3.4em;
@@ -494,8 +601,4 @@
     gap: 12px;
   }
 
-  .soon {
-    background: transparent;
-    border: 1px dashed var(--line-strong);
-  }
 </style>

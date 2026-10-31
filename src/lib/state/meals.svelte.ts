@@ -7,6 +7,7 @@ import { RECENT_KEY, remember, type RecentExtra } from '../recent';
 import { uid } from '../platform';
 import * as repo from '../repo';
 import { app, setOverride } from './app.svelte';
+import { checkAchievements } from './trophies.svelte';
 
 export const meals = $state({
   day: null as repo.DayMeals | null,
@@ -25,7 +26,7 @@ export async function loadDay(date: string): Promise<void> {
 }
 
 function persist(): void {
-  if (meals.day) void repo.saveMeals($state.snapshot(meals.day) as repo.DayMeals);
+  if (meals.day) void repo.saveMeals($state.snapshot(meals.day) as repo.DayMeals).then(checkAchievements);
 }
 
 /** null = nicht gegessen */

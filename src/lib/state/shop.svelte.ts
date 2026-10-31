@@ -7,6 +7,7 @@ import { packsOf, type ReceiptLine } from '../receipt';
 import * as repo from '../repo';
 import { afterPurchase, currentPrice, stockAt, type PriceEntry, type Receipt, type StockEntry } from '../shopping';
 import { app } from './app.svelte';
+import { checkAchievements } from './trophies.svelte';
 
 export const shop = $state({
   loaded: false,
@@ -77,5 +78,6 @@ export async function importReceipt(lines: ReceiptLine[], total: number, already
     if (!alreadyChecked.includes(line.foodId)) await changeStock(line.foodId, packs);
     bought.push(line.foodId);
   }
+  checkAchievements();
   return bought;
 }

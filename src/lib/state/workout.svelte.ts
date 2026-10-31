@@ -14,6 +14,7 @@ import * as repo from '../repo';
 import { restAfterSet } from '../supersets';
 import { extendTimer, startTimer } from '../timers';
 import { app, setOverride } from './app.svelte';
+import { checkAchievements } from './trophies.svelte';
 
 export function ladderFor(exerciseId: string): Rung[] {
   return buildLadder(getExercise(exerciseId), app.settings.dumbbellSteps);
@@ -198,6 +199,7 @@ export async function finishWorkout(feeling: number): Promise<FinishResult | nul
   await repo.saveActiveWorkout(null);
   app.workouts = [...app.workouts, workout];
   app.active = null;
+  checkAchievements();
   return { workout, records };
 }
 

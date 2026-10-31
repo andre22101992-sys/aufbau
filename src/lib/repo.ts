@@ -240,3 +240,21 @@ export async function deleteCheckin(entry: CheckinEntry): Promise<void> {
   for (const id of Object.values(entry.photos)) if (id) await tx.objectStore('photos').delete(id);
   await tx.done;
 }
+
+// ---------- Erfolge und alle Mahlzeiten-Tage ----------
+
+export async function listAchievements(): Promise<Record<string, string>> {
+  const db = await getDB();
+  const all = await db.getAll('achievements');
+  return Object.fromEntries(all.map((a) => [a.id, String(a.date ?? '')]));
+}
+
+export async function saveAchievement(id: string, date: string): Promise<void> {
+  const db = await getDB();
+  await db.put('achievements', { id, date });
+}
+
+export async function listAllMealDays(): Promise<DayMeals[]> {
+  const db = await getDB();
+  return (await db.getAll('meals')) as unknown as DayMeals[];
+}

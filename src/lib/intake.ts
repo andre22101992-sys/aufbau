@@ -32,3 +32,11 @@ export function intakeSummary(dates: DateKey[], days: Record<DateKey, DayMeals |
   }
   return { days: logged, goodDays: good, avgKcal: logged ? kcal / logged : null, avgProtein: logged ? protein / logged : null };
 }
+
+/** An wie vielen der Tage hast du dein Protein-Ziel erreicht? */
+export function proteinDays(dates: DateKey[], days: Record<DateKey, DayMeals | undefined>, options: PlanOptions, target: number): number {
+  return dates.filter((date) => {
+    const day = days[date];
+    return !!day && mealCount(day) > 0 && eatenTotals(mealsOf(date, options), day.done, day.extras).protein >= target;
+  }).length;
+}

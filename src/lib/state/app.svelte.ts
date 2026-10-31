@@ -23,6 +23,8 @@ export const app = $state({
   scale: [] as ScaleEntry[],
   /** Check-ins mit Maßen und Foto-Verweisen, alle 4 Wochen */
   checkins: [] as CheckinEntry[],
+  /** freigeschaltete Erfolge mit Datum */
+  achievements: {} as Record<string, string>,
   overrides: {} as Record<string, unknown>,
   active: null as ActiveWorkout | null,
   needRefresh: false,
@@ -30,13 +32,14 @@ export const app = $state({
 });
 
 export async function loadApp(): Promise<void> {
-  const [settings, workouts, weights, sleep, scale, checkins, overrides, active] = await Promise.all([
+  const [settings, workouts, weights, sleep, scale, checkins, achievements, overrides, active] = await Promise.all([
     repo.loadSettings(),
     repo.listWorkouts(),
     repo.listWeights(),
     repo.listSleep(),
     repo.listScale(),
     repo.listCheckins(),
+    repo.listAchievements(),
     repo.listOverrides(),
     repo.loadActiveWorkout(),
   ]);
@@ -46,6 +49,7 @@ export async function loadApp(): Promise<void> {
   app.sleep = sleep;
   app.scale = scale;
   app.checkins = checkins;
+  app.achievements = achievements;
   app.overrides = overrides;
   if (Array.isArray(overrides[CUSTOM_FOODS_KEY])) addCustomFoods(overrides[CUSTOM_FOODS_KEY] as Food[]);
   if (Array.isArray(overrides[CUSTOM_KEY])) addCustomRecipes(overrides[CUSTOM_KEY] as Recipe[]);

@@ -7,9 +7,10 @@
   import { todayKey } from '../lib/dates';
   import { eatenTotals, openMeals, plannedTotals } from '../lib/dayfood';
   import { mealNutrients } from '../lib/nutrition';
-  import { eveningRescue, gapNotice, inTime, mealMinutes, minutesOf } from '../lib/rhythm';
+  import { eveningRescue, gapNotice, inTime, lastEatenAt, mealCount, mealMinutes, minutesOf, sinceText } from '../lib/rhythm';
   import { app, showToast } from '../lib/state/app.svelte';
   import { clock, useClock } from '../lib/state/clock.svelte';
+  import { planOptions } from '../lib/state/shop.svelte';
   import { addExtra, endLightDay, isLightDay, loadDay, meals, setPortion, startLightDay } from '../lib/state/meals.svelte';
   import Icon from './Icon.svelte';
   import Sheet from './Sheet.svelte';
@@ -18,7 +19,7 @@
   void loadDay(today);
   onMount(() => useClock());
 
-  const options = $derived({ overrides: app.overrides, kcalTarget: app.settings.kcalTarget, startDate: app.settings.startDate });
+  const options = $derived(planOptions());
   const plan = $derived(mealsOf(today, options));
   const day = $derived(meals.day);
   const done = $derived(day?.done ?? {});
@@ -37,6 +38,11 @@
   const note = $derived(
     !next ? '' : next.kind === 'fixed' ? (next.note ?? '') : next.leftover ? 'Zweite Portion von gestern, dampfend heiß aufwärmen' : 'Doppelte Menge kochen, eine Portion für morgen',
   );
+
+  // Wie lange die letzte Mahlzeit her ist; bei Einträgen ohne Zeitpunkt (ältere App-Version) bleibt die Zeile weg
+  const lastAt = $derived(lastEatenAt(day));
+  const since = $derived(day && mealCount(day) === 0 ? 'Heute noch nichts abgehakt' : lastAt ? `Letzte Mahlzeit ${sinceText(clock.now - lastAt)}` : '');
+  const longPause = $derived(!!lastAt && clock.now - lastAt >= 4 * 3_600_000);
 
   // Hinweis nach langer Pause und Abend-Retter
   let dismissed = $state(false);
@@ -108,6 +114,7 @@
     <p class="small muted">{light ? 'Leichter Tag. ' : ''}{when}</p>
     <h2>{mealTime(next)} {title(next)}</h2>
     <p class="muted num">{Math.round(nutrition.kcal)} kcal, {Math.round(nutrition.protein)} g Protein</p>
+    {#if since}<p class="small since" class:long={longPause}>{since}</p>{/if}
     {#if note}<p class="small muted">{note}</p>{/if}
     <button class="btn btn-primary btn-block go" onclick={eat}><Icon name="check" size={20} />Gegessen</button>
     <button class="btn btn-ghost btn-block" onclick={() => (drinkOpen = true)}>Kein Hunger? Trinken geht auch</button>
@@ -185,6 +192,14 @@
   .light-row {
     display: flex;
     justify-content: center;
+  }
+
+  .since {
+    color: var(--text-2);
+  }
+
+  .since.long {
+    color: var(--kcal);
   }
 
   .notice {

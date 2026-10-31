@@ -17,7 +17,7 @@ export const shop = $state({
 });
 
 export function planOptions() {
-  return { overrides: app.overrides, kcalTarget: app.settings.kcalTarget, startDate: app.settings.startDate };
+  return { overrides: app.overrides, kcalTarget: app.settings.kcalTarget, startDate: app.settings.startDate, mealTimes: app.settings.mealTimes };
 }
 
 export async function loadShop(): Promise<void> {

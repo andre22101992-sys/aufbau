@@ -10,16 +10,18 @@
   import { BASE_RECIPES, PLAN_B, RECIPES, getRecipe } from '../data/recipes';
   import { WEEKDAYS_SHORT, addDays, formatDate, todayKey, weekStart } from '../lib/dates';
   import { eatenTotals, openMeals, plannedTotals, replacedMeals } from '../lib/dayfood';
+  import { RECENT_KEY, topRecent } from '../lib/recent';
   import { dayPlanNutrients, mealNutrients, portionOf, totalMinutes } from '../lib/nutrition';
   import { NUTRIENT_LABELS, NUTRIENT_TARGETS, suggestFor, weekNutrients, type NutrientKey } from '../lib/suggest';
   import { formatDecimal, parseDecimal } from '../lib/numbers';
   import { app, setOverride, showToast } from '../lib/state/app.svelte';
   import { addExtra, loadDay, meals, removeExtra, setPortion } from '../lib/state/meals.svelte';
+  import { planOptions } from '../lib/state/shop.svelte';
 
   const today = todayKey();
   void loadDay(today);
 
-  const options = $derived({ overrides: app.overrides, kcalTarget: app.settings.kcalTarget, startDate: app.settings.startDate });
+  const options = $derived(planOptions());
   const plan = $derived(mealsOf(today, options));
   const done = $derived(meals.day?.done ?? {});
   const extras = $derived(meals.day?.extras ?? []);
@@ -70,6 +72,8 @@
     { label: 'Süßes', kcal: 250, protein: 3 },
     { label: 'Döner', kcal: 700, protein: 35 },
   ];
+
+  const recent = $derived(topRecent(app.overrides[RECENT_KEY], QUICK.map((q) => q.label)));
 
   function quick(item: { label: string; kcal: number; protein: number }): void {
     addExtra(item.label, item.kcal, item.protein, replaces || undefined);
@@ -287,6 +291,15 @@
 
 <Sheet open={extraOpen} title="Extra eintragen" onclose={() => (extraOpen = false)}>
   {@render replacePicker()}
+  {#if recent.length}
+    <h3>Zuletzt gegessen</h3>
+    <div class="quick">
+      {#each recent as item (item.label + item.kcal + item.protein)}
+        <button class="btn btn-secondary" onclick={() => quick(item)}>{item.label}<span class="small muted">{item.kcal} kcal, {item.protein} g</span></button>
+      {/each}
+    </div>
+    <h3>Schnellauswahl</h3>
+  {/if}
   <div class="quick">
     {#each QUICK as item (item.label)}
       <button class="btn btn-secondary" onclick={() => quick(item)}>{item.label}<span class="small muted">{item.kcal} kcal</span></button>

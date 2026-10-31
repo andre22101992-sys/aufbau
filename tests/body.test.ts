@@ -60,7 +60,7 @@ describe('Kalorien-Steuerung', () => {
   it('schlägt +250 kcal vor, wenn der Schnitt zwei Wochen in Folge unter +0,2 kg steigt', () => {
     const advice = steeringAdvice({ weeks: weeksOf([56, 56.1, 56.2]), startDate: START, lastChange: null, today });
     expect(advice.kind).toBe('more');
-    expect(advice.kind !== 'none' && advice.kcal).toBe(250);
+    expect(advice.kind === 'more' && advice.kcal).toBe(250);
   });
 
   it('macht keinen Vorschlag im Zielbereich', () => {
@@ -109,5 +109,28 @@ describe('Schlaf und Tagesform', () => {
       { exerciseId: 'b', sets: 1, min: 8, max: 12, restSec: 60 },
     ]);
     expect(slots.map((s) => s.sets)).toEqual([2, 1]);
+  });
+});
+
+describe('Steuerung prüft, was du wirklich gegessen hast', () => {
+  const today = addDays(START, 7 * 3 + 1);
+  const weeks = weeksOf([56, 56.1, 56.2]);
+  const input = { weeks, startDate: START, lastChange: null, today, kcalTarget: 2800 };
+
+  it('verlangt nicht mehr, wenn der Plan nicht gegessen wird, sondern sagt: erst den Plan schaffen', () => {
+    const advice = steeringAdvice({ ...input, intake: { days: 10, goodDays: 3, avgKcal: 2100, avgProtein: 80 } });
+    expect(advice.kind).toBe('plan');
+    expect(advice.kind === 'plan' && advice.reason).toContain('2.100');
+  });
+
+  it('schlägt weiter +250 kcal vor, wenn der Plan gegessen wird', () => {
+    expect(steeringAdvice({ ...input, intake: { days: 12, goodDays: 10, avgKcal: 2750, avgProtein: 125 } }).kind).toBe('more');
+  });
+
+  it('weist auf fehlende Einträge hin, statt etwas zu behaupten', () => {
+    const advice = steeringAdvice({ ...input, intake: { days: 3, goodDays: 1, avgKcal: 1500, avgProtein: 60 } });
+    expect(advice.kind).toBe('more');
+    expect(advice.kind === 'more' && advice.reason).toContain('wenig eingetragen');
+    expect(steeringAdvice(input).kind).toBe('more');
   });
 });

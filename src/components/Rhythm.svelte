@@ -7,12 +7,13 @@
   import { GOOD_DAY_MEALS, dots, weekRhythm } from '../lib/rhythm';
   import { app } from '../lib/state/app.svelte';
   import { loadWeek, meals } from '../lib/state/meals.svelte';
+  import { planOptions } from '../lib/state/shop.svelte';
 
   const today = todayKey();
   const dates = Array.from({ length: 7 }, (_, i) => addDays(weekStart(today), i));
   onMount(() => void loadWeek(dates.filter((d) => d <= today)));
 
-  const options = $derived({ overrides: app.overrides, kcalTarget: app.settings.kcalTarget, startDate: app.settings.startDate });
+  const options = $derived(planOptions());
   const plan = $derived(mealsOf(today, options));
   const done = $derived(meals.day?.done ?? {});
   const extras = $derived(meals.day?.extras ?? []);

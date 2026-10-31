@@ -42,20 +42,21 @@ export function reminderEvents(settings: Settings, selected: ReminderId[], today
     const hint = 'Nicht hungrig? Trinken zählt auch. Öffne Aufbau und hake die Mahlzeit ab.';
     const add = (key: string, summary: string, time: string, days: number[], byday: string) =>
       events.push({ uid: uid(`essen-${key}`), summary: `Essen: ${summary}`, description: hint, firstDate: onDays(days), time: pad(time), durationMin: 20, rrule: `FREQ=WEEKLY;BYDAY=${byday}`, alarmMinutesBefore: 0 });
+    const mt = settings.mealTimes;
     const week = [0, 1, 2, 3, 4];
     const weekend = [5, 6];
-    add('frueh-woche', meal('frueh').name, meal('frueh').time[0], week, 'MO,TU,WE,TH,FR');
-    add('frueh-we', meal('frueh').name, meal('frueh').time[1], weekend, 'SA,SU');
-    add('oats-woche', meal('oats').name, meal('oats').time[0], week, 'MO,TU,WE,TH,FR');
-    add('oats-we', meal('oats').weekendName ?? meal('oats').name, meal('oats').time[1], weekend, 'SA,SU');
-    add('mittag-woche', 'Mittag, Portion von gestern', '12:30', week, 'MO,TU,WE,TH,FR');
-    add('mittag-we', 'Mittag', '13:00', weekend, 'SA,SU');
-    add('snack-woche', meal('snack').name, meal('snack').time[0], week, 'MO,TU,WE,TH,FR');
-    add('snack-we', meal('snack').weekendName ?? meal('snack').name, meal('snack').time[1], weekend, 'SA,SU');
-    add('abend-mo-do', 'Abendessen', '20:15', [0, 1, 2, 3], 'MO,TU,WE,TH');
-    add('abend-fr', 'Abendessen', '18:15', [4], 'FR');
-    add('abend-we', 'Abendessen', '19:00', weekend, 'SA,SU');
-    add('milch', 'Milch trinken', meal('spaet').time[0], week, 'MO,TU,WE,TH,FR');
+    add('frueh-woche', meal('frueh').name, mt.frueh[0], week, 'MO,TU,WE,TH,FR');
+    add('frueh-we', meal('frueh').name, mt.frueh[1], weekend, 'SA,SU');
+    add('oats-woche', meal('oats').name, mt.oats[0], week, 'MO,TU,WE,TH,FR');
+    add('oats-we', meal('oats').weekendName ?? meal('oats').name, mt.oats[1], weekend, 'SA,SU');
+    add('mittag-woche', 'Mittag, Portion von gestern', mt.mittag[0], week, 'MO,TU,WE,TH,FR');
+    add('mittag-we', 'Mittag', mt.mittag[1], weekend, 'SA,SU');
+    add('snack-woche', meal('snack').name, mt.snack[0], week, 'MO,TU,WE,TH,FR');
+    add('snack-we', meal('snack').weekendName ?? meal('snack').name, mt.snack[1], weekend, 'SA,SU');
+    add('abend-mo-do', 'Abendessen', mt.abendMoDo, [0, 1, 2, 3], 'MO,TU,WE,TH');
+    add('abend-fr', 'Abendessen', mt.abendFr, [4], 'FR');
+    add('abend-we', 'Abendessen', mt.abendWe, weekend, 'SA,SU');
+    add('milch', 'Milch trinken', mt.spaet, week, 'MO,TU,WE,TH,FR');
   }
   if (selected.includes('training')) {
     for (const day of ['mo', 'di', 'mi', 'do', 'fr'] as DayId[]) {

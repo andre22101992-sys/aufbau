@@ -96,6 +96,10 @@ export interface WeekSummary {
   sleepAvg: number | null;
   kcalTarget: number;
   feelings: number[];
+  /** Was du in den letzten 7 Tagen wirklich gegessen hast */
+  intakeKcal?: number | null;
+  intakeProtein?: number | null;
+  goodDays?: number;
 }
 
 /** Wochen-Coach: kurze Tipps über Apple Intelligence, ausführliche Auswertung über Claude */
@@ -105,6 +109,9 @@ export function coachPrompt(s: WeekSummary, short = false): string {
     s.weightChange !== null ? `Wochenschnitt Gewicht: ${s.weightChange >= 0 ? '+' : ''}${s.weightChange.toFixed(1)} kg zur Vorwoche (Ziel +0,2 bis +0,5 kg)` : 'Gewicht: zu wenige Werte',
     s.trend !== null ? `Trendgewicht: ${s.trend.toFixed(1)} kg` : '',
     s.sleepAvg !== null ? `Schlaf im Schnitt: ${s.sleepAvg.toFixed(1)} h` : '',
+    s.intakeKcal != null
+      ? `Gegessen im Schnitt: ${Math.round(s.intakeKcal)} kcal und ${Math.round(s.intakeProtein ?? 0)} g Protein pro Tag, an ${s.goodDays ?? 0} Tagen mindestens 4 Mahlzeiten`
+      : '',
     s.feelings.length ? `Gefühl nach den Trainings (1–5): ${s.feelings.join(', ')}` : '',
     `Kalorienziel: ${s.kcalTarget} kcal, mindestens 120 g Protein`,
   ].filter(Boolean);

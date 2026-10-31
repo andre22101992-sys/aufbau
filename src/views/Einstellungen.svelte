@@ -35,6 +35,21 @@
     { key: 'shopping', label: 'Einkauf Sa' },
   ];
 
+  const mealRows: { label: string; read: () => string; write: (v: string) => void }[] = [
+    { label: 'Frühstück Mo–Fr', read: () => app.settings.mealTimes.frueh[0], write: (v) => (app.settings.mealTimes.frueh[0] = v) },
+    { label: 'Frühstück Sa/So', read: () => app.settings.mealTimes.frueh[1], write: (v) => (app.settings.mealTimes.frueh[1] = v) },
+    { label: 'Oats Mo–Fr', read: () => app.settings.mealTimes.oats[0], write: (v) => (app.settings.mealTimes.oats[0] = v) },
+    { label: 'Haferbrei Sa/So', read: () => app.settings.mealTimes.oats[1], write: (v) => (app.settings.mealTimes.oats[1] = v) },
+    { label: 'Mittag Mo–Fr', read: () => app.settings.mealTimes.mittag[0], write: (v) => (app.settings.mealTimes.mittag[0] = v) },
+    { label: 'Mittag Sa/So', read: () => app.settings.mealTimes.mittag[1], write: (v) => (app.settings.mealTimes.mittag[1] = v) },
+    { label: 'Snack Mo–Fr', read: () => app.settings.mealTimes.snack[0], write: (v) => (app.settings.mealTimes.snack[0] = v) },
+    { label: 'Snack Sa/So', read: () => app.settings.mealTimes.snack[1], write: (v) => (app.settings.mealTimes.snack[1] = v) },
+    { label: 'Abendessen Mo–Do', read: () => app.settings.mealTimes.abendMoDo, write: (v) => (app.settings.mealTimes.abendMoDo = v) },
+    { label: 'Abendessen Fr', read: () => app.settings.mealTimes.abendFr, write: (v) => (app.settings.mealTimes.abendFr = v) },
+    { label: 'Abendessen Sa/So', read: () => app.settings.mealTimes.abendWe, write: (v) => (app.settings.mealTimes.abendWe = v) },
+    { label: 'Milch am Abend Mo–Fr', read: () => app.settings.mealTimes.spaet, write: (v) => (app.settings.mealTimes.spaet = v) },
+  ];
+
   let reminders = $state<ReminderId[]>(REMINDERS.map((r) => r.id));
   let stepsText = $state(app.settings.dumbbellSteps.map((s) => formatDecimal(s)).join('  '));
   let weightText = $state(app.settings.profile.startWeightKg ? formatDecimal(app.settings.profile.startWeightKg) : '');
@@ -210,6 +225,26 @@
           type="time"
           value={app.settings.times[field.key]}
           onchange={(e) => { app.settings.times[field.key] = e.currentTarget.value; saveSettings(); }}
+        />
+      </label>
+    {/each}
+  </section>
+
+  <h2 class="section-title">Mahlzeiten</h2>
+  <section class="card times">
+    <p class="small muted">Wann du isst. Plan, Anzeige in „Heute“ und die Kalender-Erinnerungen richten sich danach. Nach einer Änderung lädst du die Kalenderdatei unten noch einmal herunter.</p>
+    {#each mealRows as row (row.label)}
+      <label class="time-row">
+        <span>{row.label}</span>
+        <input
+          class="input time"
+          type="time"
+          value={row.read()}
+          onchange={(e) => {
+            if (!e.currentTarget.value) return;
+            row.write(e.currentTarget.value);
+            saveSettings();
+          }}
         />
       </label>
     {/each}

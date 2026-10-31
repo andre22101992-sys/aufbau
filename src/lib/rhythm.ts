@@ -96,3 +96,13 @@ export function inTime(minutes: number): string {
   const hours = Math.round(minutes / 60);
   return `in ${hours} ${hours === 1 ? 'Stunde' : 'Stunden'}`;
 }
+
+/** „gerade eben“, „vor 25 Min“, „vor 2 Std 10 Min“ */
+export function sinceText(ms: number): string {
+  const minutes = Math.max(0, Math.floor(ms / 60_000));
+  if (minutes < 1) return 'gerade eben';
+  if (minutes < 60) return `vor ${minutes} Min`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest ? `vor ${hours} Std ${rest} Min` : `vor ${hours} Std`;
+}

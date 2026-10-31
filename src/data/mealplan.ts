@@ -70,7 +70,32 @@ export function firstCookDay(startDate: DateKey | null | undefined): DateKey | n
   return startDate ? addDays(startDate, -2) : null;
 }
 
+/** Uhrzeiten der Mahlzeiten als „HH:MM“, jeweils Mo–Fr und Sa–So */
+export interface MealTimes {
+  frueh: [string, string];
+  oats: [string, string];
+  mittag: [string, string];
+  snack: [string, string];
+  abendMoDo: string;
+  abendFr: string;
+  abendWe: string;
+  spaet: string;
+}
+
+export const DEFAULT_MEAL_TIMES: MealTimes = {
+  frueh: ['05:30', '08:30'],
+  oats: ['09:00', '10:00'],
+  mittag: ['12:30', '13:00'],
+  snack: ['15:30', '16:00'],
+  abendMoDo: '20:15',
+  abendFr: '18:15',
+  abendWe: '19:00',
+  spaet: '21:15',
+};
+
 export interface PlanOptions {
+  /** Eigene Uhrzeiten der Mahlzeiten; ohne Angabe gelten die Standardzeiten */
+  mealTimes?: MealTimes;
   /** Montag der ersten Trainingswoche; davor liegt der erste Kochtag */
   startDate?: DateKey | null;
   /** getauschte Gerichte, Schlüssel dinnerKey(datum) */
@@ -146,19 +171,28 @@ export function mealsOf(date: DateKey, options: PlanOptions = {}): PlanMeal[] {
   const weekend = isWeekend(date);
   const friday = weekday(date) === 4;
   const firstDay = firstCookDay(options.startDate) === date;
+  const times = options.mealTimes ?? DEFAULT_MEAL_TIMES;
   const at = (m: FixedMeal) => m.time[weekend ? 1 : 0];
+  /** Am ersten Kochtag behalten Shake und Eier-Mittag ihre eigenen Zeiten */
+  const timeOf = (m: FixedMeal): [string, string] => {
+    if (firstDay && (m.id === 'oats' || m.id === 'mittag')) return m.time;
+    if (m.id === 'spaet') return [times.spaet, times.spaet];
+    const own = (times as unknown as Record<string, [string, string] | undefined>)[m.id];
+    return Array.isArray(own) ? own : m.time;
+  };
   const source = firstDay ? [...FIXED.filter((m) => m.id !== 'oats'), ...FIRST_DAY_MEALS] : FIXED;
   const fixed = source
     .filter((m) => !(weekend && m.weekdayOnly))
     .map((m) => ({
       ...m,
+      time: timeOf(m),
       kind: 'fixed' as const,
       items: adjust(weekend && m.weekendItems ? m.weekendItems : m.items, m.id, kcalTarget),
       name: (weekend && m.weekendName) || m.name,
       note: (weekend && m.weekendNote) || m.note,
     }));
-  const lunch: PlanMeal = { kind: 'dish', id: 'mittag', time: weekend ? '13:00' : '12:30', name: 'Mittag', recipeId: dinnerOf(addDays(date, -1), overrides), leftover: true };
-  const dinner: PlanMeal = { kind: 'dish', id: 'abend', time: weekend ? '19:00' : friday ? '18:15' : '20:15', name: 'Abendessen', recipeId: dinnerOf(date, overrides), leftover: false };
+  const lunch: PlanMeal = { kind: 'dish', id: 'mittag', time: weekend ? times.mittag[1] : times.mittag[0], name: 'Mittag', recipeId: dinnerOf(addDays(date, -1), overrides), leftover: true };
+  const dinner: PlanMeal = { kind: 'dish', id: 'abend', time: weekend ? times.abendWe : friday ? times.abendFr : times.abendMoDo, name: 'Abendessen', recipeId: dinnerOf(date, overrides), leftover: false };
   const list: PlanMeal[] = firstDay ? [...fixed, dinner] : [...fixed, lunch, dinner];
   const minutes = (t: string) => {
     const [h, m] = t.split(':').map(Number);
@@ -169,6 +203,7 @@ export function mealsOf(date: DateKey, options: PlanOptions = {}): PlanMeal[] {
   );
 }
 
+/** Uhrzeit zur Anzeige, „05:30“ wird zu „5:30“ */
 export function mealTime(meal: PlanMeal): string {
-  return meal.kind === 'fixed' ? meal.time[0] : meal.time;
+  return (meal.kind === 'fixed' ? meal.time[0] : meal.time).replace(/^0/, '');
 }

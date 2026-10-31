@@ -3,6 +3,7 @@
 import { lightKey, type PlanMeal } from '../../data/mealplan';
 import { replacedMeals } from '../dayfood';
 import { mealNutrients } from '../nutrition';
+import { RECENT_KEY, remember, type RecentExtra } from '../recent';
 import { uid } from '../platform';
 import * as repo from '../repo';
 import { app, setOverride } from './app.svelte';
@@ -13,9 +14,10 @@ export const meals = $state({
   week: {} as Record<string, repo.DayMeals>,
 });
 
+/** Lädt Tage dazu, ohne bereits geladene zu verlieren */
 export async function loadWeek(dates: string[]): Promise<void> {
   const list = await Promise.all(dates.map((d) => repo.loadMeals(d)));
-  meals.week = Object.fromEntries(list.map((d) => [d.date, d]));
+  meals.week = { ...meals.week, ...Object.fromEntries(list.map((d) => [d.date, d])) };
 }
 
 export async function loadDay(date: string): Promise<void> {
@@ -41,6 +43,8 @@ export function addExtra(label: string, kcal: number, protein: number, replaces?
   if (!meals.day) return;
   meals.day.extras.push({ id: uid(), label, kcal, protein, at: Date.now(), ...(replaces ? { replaces } : {}) });
   persist();
+  const stored = Array.isArray(app.overrides[RECENT_KEY]) ? ($state.snapshot(app.overrides[RECENT_KEY]) as RecentExtra[]) : [];
+  void setOverride(RECENT_KEY, remember(stored, { label, kcal, protein }, Date.now()));
 }
 
 export function removeExtra(id: string): void {

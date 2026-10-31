@@ -3,12 +3,17 @@
 
 import { addDays, diffDays, weekStart, type DateKey } from './dates';
 import { formatDecimal } from './numbers';
+import type { IntakeSummary } from './intake';
 import type { WeekAverage } from './trend';
 
 export const MIN_GAIN = 0.2;
 export const MAX_GAIN = 0.5;
 
-export type Steering = { kind: 'none' } | { kind: 'more' | 'less'; kcal: number; reason: string; how: string };
+export type Steering =
+  | { kind: 'none' }
+  | { kind: 'more' | 'less'; kcal: number; reason: string; how: string }
+  /** Das Gewicht steigt nicht, weil der Plan nicht gegessen wird: nicht mehr verlangen, sondern den Plan schaffen */
+  | { kind: 'plan'; reason: string; how: string };
 
 export interface SteeringInput {
   weeks: WeekAverage[];
@@ -16,11 +21,14 @@ export interface SteeringInput {
   /** Tag der letzten Änderung am Kalorienziel */
   lastChange: DateKey | null;
   today: DateKey;
+  /** Aufnahme der letzten 14 vollen Tage und das aktuelle Ziel; ohne Angaben prüft die Steuerung nicht gegen das Essen */
+  intake?: IntakeSummary;
+  kcalTarget?: number;
 }
 
 const signed = (kg: number) => `${kg >= 0 ? '+' : '−'}${formatDecimal(Math.abs(kg), 1, 1)} kg`;
 
-export function steeringAdvice({ weeks, startDate, lastChange, today }: SteeringInput): Steering {
+export function steeringAdvice({ weeks, startDate, lastChange, today, intake, kcalTarget }: SteeringInput): Steering {
   if (!startDate) return { kind: 'none' };
   // Nach einer Anpassung 2 Wochen lang kein neuer Vorschlag
   if (lastChange && diffDays(today, lastChange) < 14) return { kind: 'none' };
@@ -33,10 +41,20 @@ export function steeringAdvice({ weeks, startDate, lastChange, today }: Steering
   const first = b.avg - a.avg;
   const second = c.avg - b.avg;
   if (first < MIN_GAIN && second < MIN_GAIN) {
+    const reliable = intake !== undefined && intake.days >= 7 && intake.avgKcal !== null;
+    if (reliable && kcalTarget && intake!.avgKcal! < kcalTarget * 0.9) {
+      return {
+        kind: 'plan',
+        reason: `Dein Gewicht steigt kaum. Du hast in den letzten zwei Wochen aber im Schnitt nur ${Math.round(intake!.avgKcal!).toLocaleString('de-DE')} statt ${kcalTarget.toLocaleString('de-DE')} kcal gegessen.`,
+        how: 'Mehr Kalorien einzuplanen bringt jetzt nichts. Schaff erst den Plan: Mahlzeiten abhaken, bei wenig Hunger trinken. An schweren Tagen hilft der leichte Tag.',
+      };
+    }
     return {
       kind: 'more',
       kcal: 250,
-      reason: `Dein Wochenschnitt ist zwei Wochen in Folge um weniger als 0,2 kg gestiegen (${signed(first)} und ${signed(second)}).`,
+      reason:
+        `Dein Wochenschnitt ist zwei Wochen in Folge um weniger als 0,2 kg gestiegen (${signed(first)} und ${signed(second)}).` +
+        (reliable ? '' : ' Du hast in den letzten zwei Wochen wenig eingetragen, die App kann deshalb nicht prüfen, ob du den Plan wirklich gegessen hast.'),
       how: '+40 g Haferflocken und +150 ml Milch in die Oats, zusammen etwa 250 kcal und 10 g Protein.',
     };
   }

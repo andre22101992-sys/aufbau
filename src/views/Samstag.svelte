@@ -1,22 +1,31 @@
 <script lang="ts">
   // Samstags-Assistent: Rückblick → Wochen-Coach → Gerichte mit Rezept der Woche → Vorrat und Liste → Bon.
+  import { onMount } from 'svelte';
   import AiBridge from '../components/AiBridge.svelte';
   import Icon from '../components/Icon.svelte';
   import { BASE_RECIPES, getRecipe } from '../data/recipes';
   import { dinnerKey, dinnerOf } from '../data/mealplan';
   import { WEEKDAYS_SHORT, addDays, diffDays, todayKey, weekday } from '../lib/dates';
   import { coachPrompt, type WeekSummary } from '../lib/ai/prompts';
+  import { intakeSummary } from '../lib/intake';
   import { formatDecimal } from '../lib/numbers';
   import { shoppingDay } from '../lib/shopping';
   import { formatSleep } from '../lib/sleep';
   import { ratingKey, suggestFor } from '../lib/suggest';
   import { trendSeries, weeklyAverages } from '../lib/trend';
   import { app, setOverride, showToast } from '../lib/state/app.svelte';
+  import { loadWeek, meals } from '../lib/state/meals.svelte';
   import { goBack } from '../lib/state/router.svelte';
+  import { planOptions } from '../lib/state/shop.svelte';
 
   const today = todayKey();
   const day = shoppingDay(today);
   const days = Array.from({ length: 7 }, (_, i) => addDays(day, i));
+
+  // Die letzten 7 Tage vor heute: Was du wirklich gegessen hast
+  const last7 = Array.from({ length: 7 }, (_, i) => addDays(today, -(i + 1)));
+  onMount(() => void loadWeek(last7));
+  const intake = $derived(intakeSummary(last7, meals.week, planOptions()));
 
   const summary = $derived.by((): WeekSummary => {
     const recent = app.workouts.filter((w) => diffDays(today, w.date) < 7);
@@ -32,6 +41,9 @@
       sleepAvg: nights.length ? nights.reduce((s, n) => s + n.hours, 0) / nights.length : null,
       kcalTarget: app.settings.kcalTarget,
       feelings: recent.map((w) => w.feeling).filter((f): f is number => !!f),
+      intakeKcal: intake.avgKcal,
+      intakeProtein: intake.avgProtein,
+      goodDays: intake.goodDays,
     };
   });
 
@@ -66,6 +78,10 @@
       <p class="num strong">{summary.weightChange !== null ? `${summary.weightChange >= 0 ? '+' : '−'}${formatDecimal(Math.abs(summary.weightChange), 1, 1)} kg` : '–'}</p>
     </div>
     <div><span class="small muted">Schlaf</span><p class="num strong">{summary.sleepAvg !== null ? formatSleep(summary.sleepAvg) : '–'}</p></div>
+    <div>
+      <span class="small muted">Essen pro Tag</span>
+      <p class="num strong">{intake.avgKcal !== null ? `${Math.round(intake.avgKcal).toLocaleString('de-DE')} kcal` : '–'}</p>
+    </div>
   </section>
 
   <h2 class="section-title">2. Wochen-Coach</h2>
@@ -115,8 +131,8 @@
 
   .stats {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px 8px;
   }
 
   .strong {

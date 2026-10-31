@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { getExercise } from '../data/exercises';
   import Icon from '../components/Icon.svelte';
   import Sheet from '../components/Sheet.svelte';
@@ -11,10 +12,14 @@
   import { bestOfLog, compare, type Performance } from '../lib/records';
   import { SCALE_FIELDS, parseScaleInput, scaleChange, scaleSeries, type ScaleKey } from '../lib/scale';
   import { formatSleep } from '../lib/sleep';
+  import { intakeSummary } from '../lib/intake';
+  import { GOOD_DAY_MEALS } from '../lib/rhythm';
   import { steeringAdvice } from '../lib/steering';
   import { trainingStreak } from '../lib/streaks';
   import { forecastDate, tempoPerWeek, trendSeries, weeklyAverages } from '../lib/trend';
   import { app, setOverride, showToast } from '../lib/state/app.svelte';
+  import { loadWeek, meals } from '../lib/state/meals.svelte';
+  import { planOptions } from '../lib/state/shop.svelte';
   import { changeKcalTarget, removeScaleEntry, saveScaleEntry } from '../lib/state/body.svelte';
   import { ladderFor } from '../lib/state/workout.svelte';
 
@@ -29,10 +34,25 @@
   const target = $derived(app.settings.targetWeightKg);
   const forecast = $derived(latest ? forecastDate(latest.trend, tempo, target, today) : null);
   const weeks = $derived(weeklyAverages(app.weights));
+  // Was du wirklich gegessen hast: die letzten vollen Tage, ohne heute
+  const pastDates = (n: number) => Array.from({ length: n }, (_, i) => addDays(today, -(i + 1)));
+  const last14 = pastDates(14);
+  const last7 = pastDates(7);
+  onMount(() => void loadWeek(last14));
+  const intake14 = $derived(intakeSummary(last14, meals.week, planOptions()));
+  const intake7 = $derived(intakeSummary(last7, meals.week, planOptions()));
+  const intakeShare = $derived(intake7.avgKcal !== null ? intake7.avgKcal / app.settings.kcalTarget : null);
   const advice = $derived(
     app.overrides[skipKey] === true
       ? ({ kind: 'none' } as const)
-      : steeringAdvice({ weeks, startDate: app.settings.startDate, lastChange: app.settings.goalHistory.at(-1)?.date ?? null, today }),
+      : steeringAdvice({
+          weeks,
+          startDate: app.settings.startDate,
+          lastChange: app.settings.goalHistory.at(-1)?.date ?? null,
+          today,
+          intake: intake14,
+          kcalTarget: app.settings.kcalTarget,
+        }),
   );
   const recentNights = $derived(app.sleep.filter((s) => diffDays(today, s.date) < 7));
 
@@ -88,7 +108,7 @@
   }
 
   async function accept(): Promise<void> {
-    if (advice.kind === 'none') return;
+    if (advice.kind !== 'more' && advice.kind !== 'less') return;
     await changeKcalTarget(today, advice.kcal, advice.reason);
     showToast(`Neues Ziel: ${app.settings.kcalTarget.toLocaleString('de-DE')} kcal`);
   }
@@ -158,7 +178,17 @@
       </details>
     </section>
 
-    {#if advice.kind !== 'none'}
+    {#if advice.kind === 'plan'}
+      <section class="card stack">
+        <h2>Erst den Plan schaffen</h2>
+        <p class="muted">{advice.reason}</p>
+        <p>{advice.how}</p>
+        <div class="cluster">
+          <a class="btn btn-primary" href="#/heute">Zu Heute</a>
+          <button class="btn btn-ghost" onclick={() => setOverride(skipKey, true)}>Nicht jetzt</button>
+        </div>
+      </section>
+    {:else if advice.kind !== 'none'}
       <section class="card stack">
         <h2>{advice.kind === 'more' ? 'Etwas mehr essen' : 'Etwas weniger essen'}</h2>
         <p class="muted">{advice.reason}</p>
@@ -191,6 +221,26 @@
   {:else}
     <p class="muted small">Trag morgens in „Heute“ dein Gewicht ein. Ab dem zweiten Wert siehst du hier deinen Verlauf.</p>
   {/if}
+
+  <h2 class="section-title">Essen der letzten 7 Tage</h2>
+  <section class="card stack">
+    {#if intake7.days === 0 || intake7.avgKcal === null || intake7.avgProtein === null || intakeShare === null}
+      <p class="small muted">Hak in „Heute“ deine Mahlzeiten ab. Dann siehst du hier, wie viel du im Schnitt wirklich isst. Das ist die Zahl, die fürs Zunehmen zählt.</p>
+    {:else}
+      <div class="line">
+        <span>Im Schnitt pro Tag</span>
+        <span class="num"><strong>{Math.round(intake7.avgKcal).toLocaleString('de-DE')}</strong> / {app.settings.kcalTarget.toLocaleString('de-DE')} kcal</span>
+      </div>
+      <div class="bar" aria-hidden="true"><span class:low={intakeShare < 0.9} style:width="{Math.min(100, intakeShare * 100)}%"></span></div>
+      <p class="small muted num">{Math.round(intake7.avgProtein)} g Protein, Ziel {app.settings.proteinTarget} g</p>
+      <p class="small">
+        An <strong>{intake7.goodDays} von 7</strong> Tagen hattest du mindestens {GOOD_DAY_MEALS} Mahlzeiten{#if intake7.days < 7}, an {7 - intake7.days} Tagen steht nichts drin{/if}.
+      </p>
+      {#if intakeShare < 0.9}
+        <p class="small muted">Das liegt unter deinem Ziel. Das Gewicht kann nur steigen, wenn du isst, was im Plan steht. Bei wenig Hunger zählt auch Trinken, und der leichte Tag hilft.</p>
+      {/if}
+    {/if}
+  </section>
 
   <p class="small muted">{goalText}</p>
 
@@ -354,9 +404,32 @@
     margin-top: 6px;
   }
 
+  .line {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .bar {
+    height: 8px;
+    background: var(--surface-3);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .bar span {
+    display: block;
+    height: 100%;
+    background: var(--accent-ink);
+  }
+
+  .bar span.low {
+    background: var(--warn);
+  }
+
   .scale-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto 4.6em 3.2em;
+    grid-template-columns: 7.2em auto minmax(0, 1fr) 3.4em;
     align-items: center;
     gap: 8px;
   }

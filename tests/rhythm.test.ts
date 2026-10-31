@@ -108,3 +108,37 @@ describe('Erinnerungen an Mahlzeiten', () => {
     expect(ics).not.toMatch(/T\d{5}\r?\n/);
   });
 });
+
+import { RECENT_KEY, remember, topRecent } from '../src/lib/recent';
+import { sinceText } from '../src/lib/rhythm';
+
+describe('Zeit seit der letzten Mahlzeit', () => {
+  it('formuliert kurz und freundlich', () => {
+    expect(sinceText(20_000)).toBe('gerade eben');
+    expect(sinceText(25 * 60_000)).toBe('vor 25 Min');
+    expect(sinceText(130 * 60_000)).toBe('vor 2 Std 10 Min');
+    expect(sinceText(180 * 60_000)).toBe('vor 3 Std');
+  });
+});
+
+describe('Zuletzt gegessen', () => {
+  const muesli = { label: 'Schokomüsli mit Milch', kcal: 370, protein: 15 };
+
+  it('merkt sich Einträge, zählt Wiederholungen und behält die neuesten', () => {
+    let list = remember([], muesli, 1);
+    list = remember(list, { label: 'Döner', kcal: 700, protein: 35 }, 2);
+    list = remember(list, muesli, 3);
+    expect(list.map((x) => x.label)).toEqual(['Schokomüsli mit Milch', 'Döner']);
+    expect(list[0].n).toBe(2);
+    for (let i = 0; i < 20; i++) list = remember(list, { label: `Snack ${i}`, kcal: 100 + i, protein: 1 }, 10 + i);
+    expect(list).toHaveLength(12);
+  });
+
+  it('lässt namenlose Einträge draußen und blendet feste Schnellauswahl-Einträge aus', () => {
+    expect(remember([], { label: 'Eigener Eintrag', kcal: 300, protein: 5 }, 1)).toEqual([]);
+    const list = remember(remember([], muesli, 1), { label: 'Banane', kcal: 115, protein: 1 }, 2);
+    expect(topRecent(list, ['Banane']).map((x) => x.label)).toEqual(['Schokomüsli mit Milch']);
+    expect(topRecent(undefined, [])).toEqual([]);
+    expect(RECENT_KEY).toBe('extras:recent');
+  });
+});

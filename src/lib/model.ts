@@ -1,5 +1,6 @@
 // Gespeicherte Datensätze und Einstellungen.
 
+import { DEFAULT_MEAL_TIMES, type MealTimes } from '../data/mealplan';
 import type { DayId, Slot } from '../data/types';
 import type { DateKey } from './dates';
 import type { Timer } from './timers';
@@ -105,6 +106,7 @@ export interface Settings {
   supersets: boolean;
   theme: Theme;
   times: Times;
+  mealTimes: MealTimes;
   creatine: boolean;
   targetWeightKg: number;
   kcalTarget: number;
@@ -133,6 +135,7 @@ export const DEFAULT_SETTINGS: Settings = {
     sleep: '22:00',
     shopping: '10:00',
   },
+  mealTimes: DEFAULT_MEAL_TIMES,
   creatine: true,
   targetWeightKg: 60,
   kcalTarget: 2800,
@@ -151,6 +154,7 @@ export function withDefaults(stored: Partial<Settings> | undefined | null): Sett
     ...stored,
     profile: { ...base.profile, ...(stored.profile ?? {}) },
     times: { ...base.times, ...(stored.times ?? {}) },
+    mealTimes: { ...base.mealTimes, ...(stored.mealTimes ?? {}) },
     dumbbellSteps: stored.dumbbellSteps?.length ? [...stored.dumbbellSteps] : base.dumbbellSteps,
     goalHistory: Array.isArray(stored.goalHistory) ? [...stored.goalHistory] : base.goalHistory,
   };

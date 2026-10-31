@@ -89,6 +89,42 @@ export function dinnerOf(date: DateKey, overrides: Record<string, unknown> = {})
   return typeof swapped === 'string' ? swapped : DINNER_BY_WEEKDAY[weekday(date)];
 }
 
+/** Leichter Tag für Tage ohne Appetit: nur Trinkmahlzeiten. Der Wert ist die Uhrzeit, ab der der leichte Tag gilt. */
+export function lightKey(date: DateKey): string {
+  return `light:${date}`;
+}
+
+const SHAKE = [{ food: 'milch', grams: 400 }, { food: 'hafer', grams: 60 }, { food: 'banane', grams: 120 }];
+const GLASS = [{ food: 'milch', grams: 250 }];
+
+const LIGHT_MEALS: { id: string; time: string; name: string; items: { food: string; grams: number }[] }[] = [
+  { id: 'l1', time: '8:00', name: 'Milch-Hafer-Shake', items: SHAKE },
+  { id: 'l2', time: '11:00', name: '250 ml Milch', items: GLASS },
+  { id: 'l3', time: '13:30', name: 'Milch-Hafer-Shake', items: SHAKE },
+  { id: 'l4', time: '16:30', name: '250 ml Milch', items: GLASS },
+  { id: 'l5', time: '19:00', name: 'Milch-Hafer-Shake', items: SHAKE },
+];
+
+const toMinutes = (t: string) => {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+};
+
+/** Die Trinkmahlzeiten, die ab der Startzeit noch anstehen; spät am Abend bleibt eine übrig. */
+export function lightPlan(start: string): PlanMeal[] {
+  const from = toMinutes(start) - 20;
+  let list = LIGHT_MEALS.filter((m) => toMinutes(m.time) >= from);
+  if (!list.length) list = [{ ...LIGHT_MEALS[LIGHT_MEALS.length - 1], time: start }];
+  return list.map((m, i) => ({
+    kind: 'fixed' as const,
+    id: m.id,
+    time: [m.time, m.time] as [string, string],
+    name: m.name,
+    items: m.items,
+    note: i === 0 ? 'Trinken geht auch ohne Hunger. Langsam, in kleinen Schlucken' : undefined,
+  }));
+}
+
 /**
  * Kalorienziel: Die Oats tragen den Unterschied zu 2.800 kcal, mit Haferflocken und Milch im festen Verhältnis
  * (40 g Haferflocken + 150 ml Milch ≈ 244 kcal). Das gilt für Aufschläge der Steuerung ebenso wie für ein selbst gewähltes Ziel.
@@ -104,6 +140,8 @@ function adjust(items: { food: string; grams: number }[], mealId: string, kcalTa
 /** Alle Mahlzeiten eines Tages in zeitlicher Reihenfolge */
 export function mealsOf(date: DateKey, options: PlanOptions = {}): PlanMeal[] {
   const { overrides = {}, kcalTarget = BASE_KCAL } = options;
+  const light = overrides[lightKey(date)];
+  if (typeof light === 'string') return lightPlan(light);
   const weekend = isWeekend(date);
   const friday = weekday(date) === 4;
   const firstDay = firstCookDay(options.startDate) === date;

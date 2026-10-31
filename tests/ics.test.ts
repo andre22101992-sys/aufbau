@@ -16,7 +16,7 @@ describe('Kalenderdatei', () => {
     expect(ics).toContain('DTSTART;TZID=Europe/Berlin:20261106T171500');
     expect(ics).toContain('RRULE:FREQ=WEEKLY;BYDAY=MO');
     expect(ics).toContain('TRIGGER:-PT15M');
-    expect(ics.match(/BEGIN:VEVENT/g)).toHaveLength(5 + 2 + 2 + 1 + 1 + 1 + 1);
+    expect(ics.match(/BEGIN:VEVENT/g)).toHaveLength(12 + 5 + 2 + 2 + 1 + 1 + 1 + 1);
   });
 
   it('setzt den ersten Einkauf auf den Samstag vor dem Start', () => {

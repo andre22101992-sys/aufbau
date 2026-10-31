@@ -2,13 +2,15 @@
 
 import { DAY_TITLES } from '../data/blocks';
 import type { DayId } from '../data/types';
-import { addDays, nextWeekday, type DateKey } from './dates';
+import { addDays, nextWeekday, weekday, type DateKey } from './dates';
 import type { IcsEvent } from './ics';
+import { FIXED } from '../data/mealplan';
 import type { Settings } from './model';
 
-export type ReminderId = 'training' | 'kochen' | 'wiegen' | 'oats' | 'schlafen' | 'einkauf' | 'checkin';
+export type ReminderId = 'essen' | 'training' | 'kochen' | 'wiegen' | 'oats' | 'schlafen' | 'einkauf' | 'checkin';
 
 export const REMINDERS: { id: ReminderId; label: string; detail: (s: Settings) => string }[] = [
+  { id: 'essen', label: 'Mahlzeiten', detail: () => 'Alle Mahlzeiten, Alarm zur Uhrzeit' },
   { id: 'training', label: 'Training', detail: (s) => `Mo–Do ${s.times.trainingMoDo}, Fr ${s.times.trainingFr}, 15 Min vorher` },
   { id: 'kochen', label: 'Kochen', detail: (s) => `Mo–Do ${s.times.cookMoDo}, Fr ${s.times.cookFr}` },
   { id: 'wiegen', label: 'Wiegen', detail: (s) => `Mo–Fr ${s.times.wakeWeekday}, Sa/So ${s.times.wakeWeekend}` },
@@ -29,6 +31,32 @@ export function reminderEvents(settings: Settings, selected: ReminderId[], today
   const events: IcsEvent[] = [];
   const uid = (name: string) => `aufbau-${name}@aufbau.app`;
 
+  if (selected.includes('essen')) {
+    const pad = (time: string) => time.padStart(5, '0');
+    const meal = (id: string) => FIXED.find((m) => m.id === id)!;
+    const onDays = (days: number[]) => {
+      let d = from;
+      for (let i = 0; i < 7 && !days.includes(weekday(d)); i++) d = addDays(d, 1);
+      return d;
+    };
+    const hint = 'Nicht hungrig? Trinken zählt auch. Öffne Aufbau und hake die Mahlzeit ab.';
+    const add = (key: string, summary: string, time: string, days: number[], byday: string) =>
+      events.push({ uid: uid(`essen-${key}`), summary: `Essen: ${summary}`, description: hint, firstDate: onDays(days), time: pad(time), durationMin: 20, rrule: `FREQ=WEEKLY;BYDAY=${byday}`, alarmMinutesBefore: 0 });
+    const week = [0, 1, 2, 3, 4];
+    const weekend = [5, 6];
+    add('frueh-woche', meal('frueh').name, meal('frueh').time[0], week, 'MO,TU,WE,TH,FR');
+    add('frueh-we', meal('frueh').name, meal('frueh').time[1], weekend, 'SA,SU');
+    add('oats-woche', meal('oats').name, meal('oats').time[0], week, 'MO,TU,WE,TH,FR');
+    add('oats-we', meal('oats').weekendName ?? meal('oats').name, meal('oats').time[1], weekend, 'SA,SU');
+    add('mittag-woche', 'Mittag, Portion von gestern', '12:30', week, 'MO,TU,WE,TH,FR');
+    add('mittag-we', 'Mittag', '13:00', weekend, 'SA,SU');
+    add('snack-woche', meal('snack').name, meal('snack').time[0], week, 'MO,TU,WE,TH,FR');
+    add('snack-we', meal('snack').weekendName ?? meal('snack').name, meal('snack').time[1], weekend, 'SA,SU');
+    add('abend-mo-do', 'Abendessen', '20:15', [0, 1, 2, 3], 'MO,TU,WE,TH');
+    add('abend-fr', 'Abendessen', '18:15', [4], 'FR');
+    add('abend-we', 'Abendessen', '19:00', weekend, 'SA,SU');
+    add('milch', 'Milch trinken', meal('spaet').time[0], week, 'MO,TU,WE,TH,FR');
+  }
   if (selected.includes('training')) {
     for (const day of ['mo', 'di', 'mi', 'do', 'fr'] as DayId[]) {
       events.push({

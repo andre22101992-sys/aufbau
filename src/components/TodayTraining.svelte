@@ -10,6 +10,7 @@
   import { plannedDay } from '../lib/plan';
   import { readiness } from '../lib/readiness';
   import { app } from '../lib/state/app.svelte';
+  import { isLightDay } from '../lib/state/meals.svelte';
   import { go } from '../lib/state/router.svelte';
   import { isDeloadWeek, slotsFor, startWorkout } from '../lib/state/workout.svelte';
   import { estimateMinutes } from '../lib/supersets';
@@ -28,6 +29,9 @@
   const time = $derived(planned.dayId === 'fr' ? app.settings.times.trainingFr : app.settings.times.trainingMoDo);
   const daysToStart = $derived(app.settings.startDate ? diffDays(app.settings.startDate, today) : 0);
   const form = $derived(readiness(app.sleep.find((s) => s.date === today)?.hours ?? null, app.workouts.at(-1)?.feeling ?? null));
+  const lightDay = $derived(isLightDay(today));
+  const suggestLighter = $derived(form.suggest || lightDay);
+  const reason = $derived(lightDay ? 'Heute ist ein leichter Essens-Tag.' : form.reason);
   const lighterMinutes = $derived(planned.dayId ? estimateMinutes(slotsFor(planned.block.id, planned.dayId, 'leicht'), getExercise, app.settings.supersets) : 0);
 
   function start(dayId: DayId, mode: WorkoutMode = 'normal'): void {
@@ -58,13 +62,13 @@
     {#if deload}
       <p class="pill pill-accent">Entlastungswoche: weniger Sätze</p>
     {/if}
-    {#if form.suggest && !deload}
-      <p class="form small"><Icon name="moon" size={18} /><span>{form.reason} Heute lieber die Kurzversion oder ein Satz weniger pro Übung? Du entscheidest.</span></p>
+    {#if suggestLighter && !deload}
+      <p class="form small"><Icon name="moon" size={18} /><span>{reason} Heute lieber die Kurzversion oder ein Satz weniger pro Übung? Du entscheidest.</span></p>
     {/if}
     <button class="btn btn-primary btn-block go" onclick={() => start(planned.dayId!)}>
       <Icon name="player-play" size={20} />Training starten
     </button>
-    {#if form.suggest && !deload}
+    {#if suggestLighter && !deload}
       <button class="btn btn-secondary btn-block" onclick={() => start(planned.dayId!, 'leicht')}>
         Ein Satz weniger, ca. {lighterMinutes} Min
       </button>

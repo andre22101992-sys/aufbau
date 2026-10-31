@@ -121,19 +121,23 @@ export type Extra = {
   protein: number;
   /** ID der geplanten Mahlzeit, die dieser Eintrag ersetzt */
   replaces?: string;
+  /** Zeitpunkt des Eintrags */
+  at?: number;
 };
 
 export type DayMeals = {
   date: string;
   /** Mahlzeit → gegessene Portion (0,5 / 1 / 1,5) */
   done: Record<string, number>;
+  /** Zeitpunkt, an dem eine Mahlzeit abgehakt wurde */
+  doneAt?: Record<string, number>;
   extras: Extra[];
 };
 
 export async function loadMeals(date: string): Promise<DayMeals> {
   const db = await getDB();
   const entry = (await db.get('meals', date)) as DayMeals | undefined;
-  return { date, done: entry?.done ?? {}, extras: entry?.extras ?? [] };
+  return { date, done: entry?.done ?? {}, doneAt: entry?.doneAt ?? {}, extras: entry?.extras ?? [] };
 }
 
 export async function saveMeals(day: DayMeals): Promise<void> {

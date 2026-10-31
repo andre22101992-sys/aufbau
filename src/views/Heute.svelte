@@ -2,6 +2,8 @@
   import { getExercise } from '../data/exercises';
   import Icon from '../components/Icon.svelte';
   import MorningCheck from '../components/MorningCheck.svelte';
+  import NextMeal from '../components/NextMeal.svelte';
+  import Rhythm from '../components/Rhythm.svelte';
   import TodayTraining from '../components/TodayTraining.svelte';
   import WeekStrip from '../components/WeekStrip.svelte';
   import { deloadAdvice, isStagnating } from '../lib/blocks';
@@ -45,14 +47,16 @@
     <a class="icon-btn" href="#/einstellungen" aria-label="Einstellungen"><Icon name="settings" /></a>
   </header>
 
-  <MorningCheck />
-
   {#if weekday(today) === 5}
     <a class="card saturday" href="#/einkauf/samstag">
       <span class="row-grow"><strong>Samstags-Assistent</strong><br /><span class="small muted">Rückblick, Gerichte für die Woche, Einkaufsliste und Bon</span></span>
       <Icon name="chevron-right" />
     </a>
   {/if}
+
+  <NextMeal />
+  <Rhythm />
+  <MorningCheck />
 
   <TodayTraining />
 

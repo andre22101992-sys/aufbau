@@ -7,7 +7,7 @@ import { matchFood } from '../src/lib/receipt';
 describe('Hühnersuppe', () => {
   const soup = getRecipe('huehnersuppe');
 
-  it('ist mit Schenkel und Kartoffeln eine volle Mahlzeit und bleibt im Budget', () => {
+  it('ist mit Schenkel und Nudeln eine volle Mahlzeit und bleibt im Budget', () => {
     const n = portionOf(soup);
     expect(n.kcal).toBeGreaterThan(800);
     expect(n.kcal).toBeLessThan(1000);

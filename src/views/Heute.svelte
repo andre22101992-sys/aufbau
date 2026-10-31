@@ -10,6 +10,7 @@
   import { deloadAdvice, isStagnating } from '../lib/blocks';
   import { checkinDue } from '../lib/checkin';
   import { formatDate, todayKey, weekStart, weekday } from '../lib/dates';
+  import { isPausedOn } from '../lib/pause';
   import { plannedDay } from '../lib/plan';
   import { trainingStreak } from '../lib/streaks';
   import { weekOverview } from '../lib/week';
@@ -22,13 +23,14 @@
   const skipKey = `deload-skip:${weekStart(today)}`;
 
   const planned = $derived(plannedDay(today, app.settings.startDate));
-  const week = $derived(weekOverview(today, app.settings.startDate, app.workouts));
-  const streak = $derived(trainingStreak(app.workouts.map((w) => w.date), app.settings.startDate, today));
+  const paused = $derived(isPausedOn(app.settings.pauses, today));
+  const week = $derived(weekOverview(today, app.settings.startDate, app.workouts, (d) => isPausedOn(app.settings.pauses, d)));
+  const streak = $derived(trainingStreak(app.workouts.map((w) => w.date), app.settings.startDate, today, (d) => isPausedOn(app.settings.pauses, d)));
   const exerciseIds = $derived([...new Set(app.workouts.flatMap((w) => w.exercises.map((e) => e.exerciseId)))]);
   const stagnating = $derived(exerciseIds.filter((id) => isStagnating(historyOf(id).map((h) => h.log), ladderFor(id))));
   const feelings = $derived([...app.workouts].reverse().map((w) => w.feeling ?? 3));
   const advice = $derived(
-    app.workouts.length >= 3 && !isDeloadWeek(today) && app.overrides[skipKey] !== true
+    app.workouts.length >= 3 && !paused && !isDeloadWeek(today) && app.overrides[skipKey] !== true
       ? deloadAdvice({ stagnatingCount: stagnating.length, feelings, week: planned.week, block: planned.block })
       : { suggest: false, reason: '' },
   );
@@ -92,7 +94,7 @@
         <button class="btn btn-ghost" onclick={() => setOverride(skipKey, true)}>Nicht jetzt</button>
       </div>
     </section>
-  {:else if stagnating.length > 0}
+  {:else if stagnating.length > 0 && !paused}
     <section class="card stack">
       <h2>Hier geht es gerade nicht voran</h2>
       <p class="muted small">Seit 3 Trainings keine Steigerung. Probier eine andere Variante oder mach etwas längere Pausen.</p>

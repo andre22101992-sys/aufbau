@@ -14,12 +14,15 @@
   import { go } from '../lib/state/router.svelte';
   import { isDeloadWeek, slotsFor, startWorkout } from '../lib/state/workout.svelte';
   import { estimateMinutes } from '../lib/supersets';
+  import { isPausedOn } from '../lib/pause';
   import { weekOverview } from '../lib/week';
   import Icon from './Icon.svelte';
+  import PauseControls from './PauseControls.svelte';
 
   const today = todayKey();
   const planned = $derived(plannedDay(today, app.settings.startDate));
-  const week = $derived(weekOverview(today, app.settings.startDate, app.workouts));
+  const paused = $derived(isPausedOn(app.settings.pauses, today));
+  const week = $derived(weekOverview(today, app.settings.startDate, app.workouts, (d) => isPausedOn(app.settings.pauses, d)));
   const todayDone = $derived(week.find((d) => d.date === today && d.state === 'done'));
   const missed = $derived(week.filter((d) => d.state === 'missed'));
   const deload = $derived(isDeloadWeek(today));
@@ -42,7 +45,9 @@
   const dayName = (dayId: DayId) => WEEKDAYS[['mo', 'di', 'mi', 'do', 'fr'].indexOf(dayId)];
 </script>
 
-{#if app.active}
+{#if paused}
+  <PauseControls />
+{:else if app.active}
   <div class="card-hero">
     <p class="small muted">Training läuft</p>
     <h2>{DAY_TITLES[app.active.dayId]}</h2>
@@ -94,7 +99,7 @@
   </div>
 {/if}
 
-{#if !app.active && missed.length > 0 && !planned.beforeStart}
+{#if !app.active && !paused && missed.length > 0 && !planned.beforeStart}
   <div class="list">
     {#each missed as day (day.dayId)}
       <button class="row" onclick={() => start(day.dayId)}>
@@ -107,6 +112,10 @@
       </button>
     {/each}
   </div>
+{/if}
+
+{#if !paused && !app.active}
+  <PauseControls />
 {/if}
 
 <style>

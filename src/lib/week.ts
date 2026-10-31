@@ -4,7 +4,7 @@ import { DAY_IDS, type DayId } from '../data/types';
 import { addDays, weekStart, type DateKey } from './dates';
 import type { Workout } from './model';
 
-export type DayState = 'done' | 'today' | 'missed' | 'upcoming' | 'beforeStart';
+export type DayState = 'done' | 'today' | 'missed' | 'upcoming' | 'beforeStart' | 'paused';
 
 export interface DayStatus {
   dayId: DayId;
@@ -20,7 +20,7 @@ export function workoutsInWeek(workouts: Workout[], date: DateKey): Workout[] {
 }
 
 /** Ein nachgeholtes Training zählt für den geplanten Tag (dayId), egal an welchem Tag es stattfand. */
-export function weekOverview(today: DateKey, startDate: DateKey | null, workouts: Workout[]): DayStatus[] {
+export function weekOverview(today: DateKey, startDate: DateKey | null, workouts: Workout[], isPaused: (date: DateKey) => boolean = () => false): DayStatus[] {
   const monday = weekStart(today);
   const thisWeek = workoutsInWeek(workouts, today);
   return DAY_IDS.map((dayId, i) => {
@@ -29,6 +29,7 @@ export function weekOverview(today: DateKey, startDate: DateKey | null, workouts
     let state: DayState;
     if (workout) state = 'done';
     else if (startDate && date < startDate) state = 'beforeStart';
+    else if (isPaused(date)) state = 'paused';
     else if (date === today) state = 'today';
     else if (date < today) state = 'missed';
     else state = 'upcoming';

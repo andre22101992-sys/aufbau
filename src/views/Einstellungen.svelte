@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import Icon from '../components/Icon.svelte';
+  import PauseControls from '../components/PauseControls.svelte';
   import Sheet from '../components/Sheet.svelte';
   import Stepper from '../components/Stepper.svelte';
   import { BackupError, backupFileName, createBackup, parseBackup, restoreBackup, type BackupFile } from '../lib/backup';
@@ -196,6 +197,12 @@
       Fällt dir das Essen am Anfang schwer, starte bei 2.500 und steigere dich alle zwei Wochen um 150 bis 250 kcal. Das Protein-Ziel bleibt bei mindestens
       {app.settings.proteinTarget} g.
     </p>
+  </section>
+
+  <h2 class="section-title">Pause</h2>
+  <section class="card stack">
+    <p class="small muted">Bei Krankheit oder Urlaub ruhen Training, Serie und Kalorien-Steuerung, und verpasste Tage zählen nicht.</p>
+    <PauseControls />
   </section>
 
   <h2 class="section-title">Training</h2>

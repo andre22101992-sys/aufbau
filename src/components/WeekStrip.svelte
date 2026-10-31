@@ -15,6 +15,7 @@
     missed: 'verpasst',
     upcoming: 'kommt noch',
     beforeStart: 'vor dem Start',
+    paused: 'Pause',
   };
 </script>
 
@@ -85,5 +86,10 @@
   .today .day {
     color: var(--text);
     font-weight: 600;
+  }
+
+  .paused .mark {
+    background: transparent;
+    box-shadow: inset 0 0 0 2px var(--surface-3);
   }
 </style>

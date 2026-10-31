@@ -18,6 +18,7 @@
   import { intakeSummary, proteinDays } from '../lib/intake';
   import { GOOD_DAY_MEALS } from '../lib/rhythm';
   import { steeringAdvice } from '../lib/steering';
+  import { isPausedOn, steeringOnHold } from '../lib/pause';
   import { trainingStreak } from '../lib/streaks';
   import { workoutsInWeek } from '../lib/week';
   import { forecastDate, tempoPerWeek, trendSeries, weeklyAverages } from '../lib/trend';
@@ -29,7 +30,7 @@
 
   const today = todayKey();
   const skipKey = `steer-skip:${weekStart(today)}`;
-  const streak = $derived(trainingStreak(app.workouts.map((w) => w.date), app.settings.startDate, today));
+  const streak = $derived(trainingStreak(app.workouts.map((w) => w.date), app.settings.startDate, today, (d) => isPausedOn(app.settings.pauses, d)));
   const planned = $derived(plannedDay(today, app.settings.startDate));
 
   const series = $derived(trendSeries(app.weights));
@@ -47,7 +48,7 @@
   const intake7 = $derived(intakeSummary(last7, meals.week, planOptions()));
   const intakeShare = $derived(intake7.avgKcal !== null ? intake7.avgKcal / app.settings.kcalTarget : null);
   const advice = $derived(
-    app.overrides[skipKey] === true
+    app.overrides[skipKey] === true || steeringOnHold(app.settings.pauses, today)
       ? ({ kind: 'none' } as const)
       : steeringAdvice({
           weeks,

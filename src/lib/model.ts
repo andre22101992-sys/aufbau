@@ -3,6 +3,7 @@
 import { DEFAULT_MEAL_TIMES, type MealTimes } from '../data/mealplan';
 import type { DayId, Slot } from '../data/types';
 import type { DateKey } from './dates';
+import type { Pause } from './pause';
 import type { Timer } from './timers';
 
 export type Technique = 'langsam' | 'pause';
@@ -113,6 +114,8 @@ export interface Settings {
   proteinTarget: number;
   /** Änderungen am Kalorienziel durch die Steuerung, älteste zuerst */
   goalHistory: GoalChange[];
+  /** Pausen wegen Krankheit oder Urlaub, die laufende zuletzt */
+  pauses: Pause[];
   guidedWorkoutSeen: boolean;
   lastBackupAt: number | null;
 }
@@ -141,6 +144,7 @@ export const DEFAULT_SETTINGS: Settings = {
   kcalTarget: 2800,
   proteinTarget: 120,
   goalHistory: [],
+  pauses: [],
   guidedWorkoutSeen: false,
   lastBackupAt: null,
 };
@@ -157,5 +161,6 @@ export function withDefaults(stored: Partial<Settings> | undefined | null): Sett
     mealTimes: { ...base.mealTimes, ...(stored.mealTimes ?? {}) },
     dumbbellSteps: stored.dumbbellSteps?.length ? [...stored.dumbbellSteps] : base.dumbbellSteps,
     goalHistory: Array.isArray(stored.goalHistory) ? [...stored.goalHistory] : base.goalHistory,
+    pauses: Array.isArray(stored.pauses) ? [...stored.pauses] : base.pauses,
   };
 }

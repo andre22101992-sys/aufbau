@@ -12,6 +12,7 @@
   import { doneMuscleSets, plannedMuscleSets } from '../lib/muscles';
   import { plannedDay, resolveSlots } from '../lib/plan';
   import { estimateMinutes } from '../lib/supersets';
+  import { isPausedOn } from '../lib/pause';
   import { weekOverview, workoutsInWeek, type DayState } from '../lib/week';
   import { app } from '../lib/state/app.svelte';
   import { go } from '../lib/state/router.svelte';
@@ -20,7 +21,7 @@
   const today = todayKey();
   const planned = $derived(plannedDay(today, app.settings.startDate));
   const block = $derived(planned.block);
-  const week = $derived(weekOverview(today, app.settings.startDate, app.workouts));
+  const week = $derived(weekOverview(today, app.settings.startDate, app.workouts, (d) => isPausedOn(app.settings.pauses, d)));
   const plannedSets = $derived(plannedMuscleSets(DAY_IDS.map((d) => resolveSlots(block.days[d], block.id, app.overrides))));
   const doneSets = $derived(doneMuscleSets(workoutsInWeek(app.workouts, today)));
   const history = $derived([...app.workouts].reverse().slice(0, 15));
@@ -45,6 +46,7 @@
     missed: 'verpasst',
     upcoming: '',
     beforeStart: 'vor dem Start',
+    paused: 'Pause',
   };
 
   function start(dayId: DayId, mode: WorkoutMode): void {

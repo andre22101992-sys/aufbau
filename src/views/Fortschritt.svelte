@@ -1,18 +1,21 @@
 <script lang="ts">
   import { getExercise } from '../data/exercises';
   import Icon from '../components/Icon.svelte';
+  import Sheet from '../components/Sheet.svelte';
+  import Sparkline from '../components/Sparkline.svelte';
   import WeightChart from '../components/WeightChart.svelte';
   import { addDays, diffDays, formatDate, fromKey, todayKey, weekStart } from '../lib/dates';
   import { performanceLabel } from '../lib/format';
   import { formatDecimal } from '../lib/numbers';
   import { plannedDay } from '../lib/plan';
   import { bestOfLog, compare, type Performance } from '../lib/records';
+  import { SCALE_FIELDS, parseScaleInput, scaleChange, scaleSeries, type ScaleKey } from '../lib/scale';
   import { formatSleep } from '../lib/sleep';
   import { steeringAdvice } from '../lib/steering';
   import { trainingStreak } from '../lib/streaks';
   import { forecastDate, tempoPerWeek, trendSeries, weeklyAverages } from '../lib/trend';
   import { app, setOverride, showToast } from '../lib/state/app.svelte';
-  import { changeKcalTarget } from '../lib/state/body.svelte';
+  import { changeKcalTarget, removeScaleEntry, saveScaleEntry } from '../lib/state/body.svelte';
   import { ladderFor } from '../lib/state/workout.svelte';
 
   const today = todayKey();
@@ -56,6 +59,33 @@
     const goal = `Dein Ziel: ${app.settings.kcalTarget.toLocaleString('de-DE')} kcal und mindestens ${app.settings.proteinTarget} g Protein am Tag.`;
     return change ? `${goal} Zuletzt angepasst am ${dayMonth(change.date)}.` : goal;
   });
+
+  // Körperwerte der Waage
+  let scaleOpen = $state(false);
+  let scaleDate = $state(today);
+  let scaleTexts = $state<Partial<Record<ScaleKey, string>>>({});
+  let scaleError = $state('');
+  const scaleSorted = $derived([...app.scale].sort((a, b) => (a.date < b.date ? 1 : -1)));
+  const fmt = (v: number, digits: number) => formatDecimal(v, digits, digits);
+
+  function openScale(): void {
+    scaleDate = today;
+    scaleError = '';
+    const existing = app.scale.find((e) => e.date === today);
+    scaleTexts = Object.fromEntries(SCALE_FIELDS.map((f) => [f.key, existing?.[f.key] !== undefined ? fmt(existing[f.key]!, f.digits) : '']));
+    scaleOpen = true;
+  }
+
+  async function saveScale(): Promise<void> {
+    const result = parseScaleInput(scaleDate, $state.snapshot(scaleTexts));
+    if (!result.ok) {
+      scaleError = result.error;
+      return;
+    }
+    await saveScaleEntry(result.entry);
+    scaleOpen = false;
+    showToast('Waagenwerte gespeichert');
+  }
 
   async function accept(): Promise<void> {
     if (advice.kind === 'none') return;
@@ -164,6 +194,39 @@
 
   <p class="small muted">{goalText}</p>
 
+  <h2 class="section-title">Körperwerte der Waage</h2>
+  <section class="card stack">
+    {#if app.scale.length}
+      <p class="small muted">Letzte Messung am {formatDate(scaleSorted[0].date, 'short')}</p>
+      {#each SCALE_FIELDS as f (f.key)}
+        {@const change = scaleChange(app.scale, f.key)}
+        {#if change}
+          <div class="scale-row">
+            <span class="scale-name">{f.label}</span>
+            <Sparkline points={scaleSeries(app.scale, f.key)} />
+            <span class="num scale-value">{fmt(change.latest, f.digits)}{f.unit ? ` ${f.unit}` : ''}</span>
+            <span class="small muted num scale-delta">{change.sinceFirst === null ? '' : `${change.sinceFirst >= 0 ? '+' : '−'}${fmt(Math.abs(change.sinceFirst), f.digits)}`}</span>
+          </div>
+        {/if}
+      {/each}
+      <details class="why">
+        <summary class="small">Alle Messungen</summary>
+        <div class="list inner">
+          {#each scaleSorted as e (e.id)}
+            <div class="row">
+              <span class="row-grow">{formatDate(e.date, 'short')}<br /><span class="small muted">{SCALE_FIELDS.filter((f) => e[f.key] !== undefined).map((f) => `${f.label} ${fmt(e[f.key]!, f.digits)}${f.unit ? ` ${f.unit}` : ''}`).join(', ')}</span></span>
+              <button class="icon-btn" aria-label="Messung vom {formatDate(e.date, 'short')} löschen" onclick={() => removeScaleEntry(e)}><Icon name="x" size={18} /></button>
+            </div>
+          {/each}
+        </div>
+      </details>
+    {:else}
+      <p class="small muted">Trag alle vier Wochen die Werte deiner Körperwaage ein, am besten morgens nüchtern unter gleichen Bedingungen. Dann siehst du hier, wie sich Muskelmasse und Körperfett entwickeln.</p>
+    {/if}
+    <button class="btn btn-secondary" onclick={openScale}><Icon name="scale" size={18} />Werte eintragen</button>
+    <p class="caption muted">Waagen messen mit einem schwachen Strom durch den Körper. Wasser, Essen und Uhrzeit verändern die Werte, einzelne Zahlen sind deshalb ungenau. Aussagekräftig ist nur der Verlauf über Wochen.</p>
+  </section>
+
   {#if recentNights.length}
     <h2 class="section-title">Schlaf</h2>
     <section class="card sleep">
@@ -198,6 +261,23 @@
     <p class="small muted">Check-ins mit Fotos, Erfolge und Wochenringe kommen mit den nächsten Updates.</p>
   </section>
 </div>
+
+<Sheet open={scaleOpen} title="Waagenwerte eintragen" onclose={() => (scaleOpen = false)}>
+  <p class="small muted">Nimm die Werte aus der App deiner Waage. Leere Felder bleiben leer.</p>
+  <label class="field"><span>Datum</span><input class="input" type="date" bind:value={scaleDate} max={today} /></label>
+  <div class="grid2">
+    {#each SCALE_FIELDS as f (f.key)}
+      <label class="field">
+        <span>{f.label}{f.unit ? ` (${f.unit})` : ''}</span>
+        <input class="input" inputmode="decimal" placeholder={f.placeholder} bind:value={scaleTexts[f.key]} />
+      </label>
+    {/each}
+  </div>
+  {#if scaleError}<p class="result bad"><Icon name="alert-triangle" size={18} /><span>{scaleError}</span></p>{/if}
+  {#snippet footer()}
+    <button class="btn btn-primary btn-block" onclick={saveScale}>Speichern</button>
+  {/snippet}
+</Sheet>
 
 <style>
   .stats {
@@ -272,6 +352,33 @@
 
   .why p {
     margin-top: 6px;
+  }
+
+  .scale-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto 4.6em 3.2em;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .scale-name {
+    font-size: var(--fs-small);
+    color: var(--text-2);
+  }
+
+  .scale-value {
+    text-align: right;
+    font-weight: 600;
+  }
+
+  .scale-delta {
+    text-align: right;
+  }
+
+  .grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
   }
 
   .delta {

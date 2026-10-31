@@ -3,6 +3,7 @@
 import { withDefaults, type ActiveWorkout, type Settings, type SleepEntry, type WeightEntry, type Workout } from '../model';
 import { CUSTOM_FOODS_KEY, addCustomFoods, type Food } from '../../data/foods';
 import { CUSTOM_KEY, addCustomRecipes, type Recipe } from '../../data/recipes';
+import type { ScaleEntry } from '../scale';
 import * as repo from '../repo';
 
 interface Toast {
@@ -17,6 +18,8 @@ export const app = $state({
   /** nach Datum sortiert */
   weights: [] as WeightEntry[],
   sleep: [] as SleepEntry[],
+  /** Werte der Körperwaage, alle paar Wochen */
+  scale: [] as ScaleEntry[],
   overrides: {} as Record<string, unknown>,
   active: null as ActiveWorkout | null,
   needRefresh: false,
@@ -24,11 +27,12 @@ export const app = $state({
 });
 
 export async function loadApp(): Promise<void> {
-  const [settings, workouts, weights, sleep, overrides, active] = await Promise.all([
+  const [settings, workouts, weights, sleep, scale, overrides, active] = await Promise.all([
     repo.loadSettings(),
     repo.listWorkouts(),
     repo.listWeights(),
     repo.listSleep(),
+    repo.listScale(),
     repo.listOverrides(),
     repo.loadActiveWorkout(),
   ]);
@@ -36,6 +40,7 @@ export async function loadApp(): Promise<void> {
   app.workouts = workouts;
   app.weights = weights;
   app.sleep = sleep;
+  app.scale = scale;
   app.overrides = overrides;
   if (Array.isArray(overrides[CUSTOM_FOODS_KEY])) addCustomFoods(overrides[CUSTOM_FOODS_KEY] as Food[]);
   if (Array.isArray(overrides[CUSTOM_KEY])) addCustomRecipes(overrides[CUSTOM_KEY] as Recipe[]);

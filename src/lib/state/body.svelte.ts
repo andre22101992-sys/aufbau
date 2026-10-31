@@ -4,6 +4,7 @@ import type { DateKey } from '../dates';
 import type { SleepEntry, WeightEntry } from '../model';
 import { roundTo } from '../numbers';
 import * as repo from '../repo';
+import type { ScaleEntry } from '../scale';
 import { app, saveSettingsNow } from './app.svelte';
 
 /** Ersetzt den Eintrag mit demselben Datum und hält die Liste sortiert. */
@@ -45,4 +46,15 @@ export async function setKcalTarget(date: DateKey, value: number): Promise<void>
   app.settings.kcalTarget = value;
   app.settings.goalHistory = history;
   await saveSettingsNow();
+}
+
+/** Ersetzt die Messung desselben Tages */
+export async function saveScaleEntry(entry: ScaleEntry): Promise<void> {
+  await repo.saveScale(entry);
+  app.scale = upsert(app.scale, entry);
+}
+
+export async function removeScaleEntry(entry: ScaleEntry): Promise<void> {
+  await repo.deleteScale(entry.id);
+  app.scale = app.scale.filter((e) => e.id !== entry.id);
 }

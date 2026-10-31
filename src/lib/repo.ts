@@ -2,6 +2,7 @@
 // Wichtig: Svelte-Zustände vor dem Speichern mit $state.snapshot in normale Objekte verwandeln.
 
 import { STORE_NAMES, getDB } from './db';
+import type { ScaleEntry } from './scale';
 import type { PriceEntry, Receipt, StockEntry } from './shopping';
 import { withDefaults, type ActiveWorkout, type Settings, type SleepEntry, type WeightEntry, type Workout } from './model';
 
@@ -186,4 +187,22 @@ export async function listAliases(): Promise<Record<string, string>> {
 export async function saveAlias(text: string, foodId: string): Promise<void> {
   const db = await getDB();
   await db.put('aliases', { text, foodId });
+}
+
+// ---------- Waagenwerte (im Bereich „checkins“, Art „waage“) ----------
+
+export async function listScale(): Promise<ScaleEntry[]> {
+  const db = await getDB();
+  const all = await db.getAll('checkins');
+  return all.filter((c) => c.kind === 'waage').map(({ kind: _kind, ...entry }) => entry as unknown as ScaleEntry);
+}
+
+export async function saveScale(entry: ScaleEntry): Promise<void> {
+  const db = await getDB();
+  await db.put('checkins', { ...entry, kind: 'waage' });
+}
+
+export async function deleteScale(id: string): Promise<void> {
+  const db = await getDB();
+  await db.delete('checkins', id);
 }

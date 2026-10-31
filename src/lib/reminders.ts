@@ -95,7 +95,7 @@ export function reminderEvents(settings: Settings, selected: ReminderId[], today
   if (selected.includes('checkin')) {
     // Samstag am Ende der vierten Trainingswoche, danach alle 4 Wochen
     const firstCheckin = settings.startDate ? addDays(settings.startDate, 26) : first(5);
-    events.push({ uid: uid('checkin'), summary: 'Check-in: Maße, Fotos und Backup', firstDate: firstCheckin < today ? first(5) : firstCheckin, time: '09:00', durationMin: 15, rrule: 'FREQ=WEEKLY;INTERVAL=4;BYDAY=SA', alarmMinutesBefore: 0 });
+    events.push({ uid: uid('checkin'), summary: 'Check-in: Waagenwerte, Maße, Fotos und Backup', firstDate: firstCheckin < today ? first(5) : firstCheckin, time: '09:00', durationMin: 15, rrule: 'FREQ=WEEKLY;INTERVAL=4;BYDAY=SA', alarmMinutesBefore: 0 });
   }
   return events;
 }

@@ -85,6 +85,11 @@
     gap: 14px;
   }
 
+  /* Listen mit overflow: hidden würden sonst schrumpfen und abgeschnitten werden, statt das Fenster scrollen zu lassen */
+  .body > :global(*) {
+    flex-shrink: 0;
+  }
+
   .foot {
     display: flex;
     gap: 10px;

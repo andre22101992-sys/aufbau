@@ -211,4 +211,27 @@ export const MORE_RECIPES: Recipe[] = [
       { device: 'du', at: 20, minutes: 3, text: 'Kartoffeln abgießen, mit Soße, Zwiebel und Thunfisch mischen, Eier pellen und vierteln. Halbieren, Büro-Box offen abkühlen lassen, dann in den Kühlschrank.' },
     ],
   },
+  {
+    id: 'huehnersuppe',
+    name: 'Hühnersuppe mit Kartoffeln und Nudeln',
+    servings: 2,
+    ingredients: [
+      { food: 'schenkel', grams: 700 },
+      { food: 'suppengruen', grams: 300 },
+      { food: 'kartoffeln', grams: 400 },
+      { food: 'nudeln', grams: 100 },
+      { food: 'oel', grams: 10 },
+      { food: 'bruehe', grams: 5 },
+      { food: 'gewuerz', grams: 2 },
+    ],
+    steps: [
+      { device: 'topf', at: 0, minutes: 8, text: '{wasser:schenkel:1.6} Wasser mit 1 TL Brühe, Salz und Pfeffer in den Topf, Deckel drauf, höchste Stufe.' },
+      { device: 'du', at: 1, minutes: 7, text: 'Schenkel ({schenkel}) abspülen und trocken tupfen. Suppengrün ({suppengruen}) waschen und klein schneiden, Kartoffeln ({kartoffeln}) schälen und in 2 cm große Würfel schneiden. Danach Hände und Brett waschen.' },
+      { device: 'topf', at: 8, minutes: 20, timer: 20, text: 'Sobald das Wasser kocht: Schenkel und Suppengrün hinein, kleine Stufe, Deckel halb drauf. Den Schaum von oben abschöpfen.' },
+      { device: 'topf', at: 28, minutes: 10, timer: 10, text: 'Kartoffeln dazugeben und weitere 10 Minuten köcheln.' },
+      { device: 'topf', at: 38, minutes: 7, timer: 7, text: 'Nudeln ({nudeln}) dazugeben und 7 Minuten mitkochen, ab und zu umrühren.' },
+      { device: 'du', at: 45, minutes: 4, text: 'Schenkel herausnehmen, Fleisch und Haut von den Knochen lösen und zurück in die Suppe geben. Garprobe: Das Fleisch muss innen weiß sein, der Saft klar, ohne Rosa.' },
+      { device: 'du', at: 49, minutes: 2, text: 'Öl-Booster: Öl ({oel}) unterrühren, abschmecken, halbieren. Die Büro-Box offen abkühlen lassen, dann in den Kühlschrank. Später dampfend heiß aufwärmen.' },
+    ],
+  },
 ];

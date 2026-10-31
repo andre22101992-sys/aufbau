@@ -15,7 +15,7 @@ export function freshEnough(recipe: Recipe, date: DateKey): boolean {
   const day = weekday(date);
   const foods = recipe.ingredients.map((i) => i.food);
   if (foods.includes('hack') && day < 5) return false;
-  if (foods.includes('haehnchen') && day > 1 && day < 5) return false;
+  if ((foods.includes('haehnchen') || foods.includes('schenkel')) && day > 1 && day < 5) return false;
   return true;
 }
 

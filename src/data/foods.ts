@@ -26,6 +26,8 @@ export const FOODS: Food[] = [
   { id: 'ei', name: 'Eier', kcal: 140, protein: 12.5, fiber: 0, calcium: 50, iron: 1.9, vitaminC: 0, pack: { grams: 600, euro: 2.5, label: '10 Stück' }, unit: { name: 'Ei', plural: 'Eier', grams: 60 } },
   { id: 'gouda', name: 'Gouda', kcal: 356, protein: 25, fiber: 0, calcium: 800, iron: 0.2, vitaminC: 0, pack: { grams: 400, euro: 2.99, label: '400 g' } },
   { id: 'hack', name: 'Hackfleisch gemischt', kcal: 250, protein: 17, fiber: 0, calcium: 10, iron: 1.8, vitaminC: 0, pack: { grams: 500, euro: 2.75, label: '500 g' } },
+  { id: 'schenkel', name: 'Hähnchenschenkel, mit Knochen und Haut', kcal: 135, protein: 13, fiber: 0, calcium: 10, iron: 0.8, vitaminC: 0, pack: { grams: 1000, euro: 4.49, label: '1 kg' } },
+  { id: 'suppengruen', name: 'Suppengrün', kcal: 35, protein: 1.5, fiber: 3, calcium: 40, iron: 0.7, vitaminC: 12, pack: { grams: 400, euro: 1.09, label: '1 Bund' }, unit: { name: 'Bund', plural: 'Bund', grams: 400 } },
   { id: 'haehnchen', name: 'Hähnchenbrustfilet', kcal: 110, protein: 23.5, fiber: 0, calcium: 10, iron: 0.6, vitaminC: 0, pack: { grams: 600, euro: 5.4, label: '600 g' } },
   { id: 'reis', name: 'Langkornreis', kcal: 350, protein: 7, fiber: 1.3, calcium: 10, iron: 0.8, vitaminC: 0, pack: { grams: 1000, euro: 1.59, label: '1 kg' } },
   { id: 'nudeln', name: 'Nudeln', kcal: 355, protein: 12.5, fiber: 3, calcium: 20, iron: 1.5, vitaminC: 0, pack: { grams: 500, euro: 0.79, label: '500 g' } },

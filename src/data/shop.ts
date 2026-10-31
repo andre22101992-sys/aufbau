@@ -19,6 +19,8 @@ export const SHOP: Record<string, ShopInfo> = {
   zwiebel: { section: 'Obst und Gemüse', icon: '🧅', pantry: true, keywords: ['zwieb'] },
   paprika: { section: 'Obst und Gemüse', icon: '🫑', keywords: ['paprika'] },
   hack: { section: 'Kühlregal', icon: '🥩', keywords: ['hack'] },
+  schenkel: { section: 'Kühlregal', icon: '🍗', keywords: ['schenkel', 'keule'] },
+  suppengruen: { section: 'Obst und Gemüse', icon: '🥬', keywords: ['suppengr'] },
   haehnchen: { section: 'Kühlregal', icon: '🍗', keywords: ['haehn', 'hahn', 'huhn', 'chicken', 'gefl'] },
   gouda: { section: 'Kühlregal', icon: '🧀', keywords: ['gouda', 'kaese'] },
   ei: { section: 'Kühlregal', icon: '🥚', keywords: ['eier', 'ei '] },

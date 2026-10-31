@@ -44,9 +44,11 @@ describe('Kalorienziel', () => {
     }
   });
 
-  it('lässt auch beim niedrigsten einstellbaren Ziel noch Haferflocken und Milch übrig', () => {
-    const oats = mealsOf(MONDAY, { kcalTarget: 2500 }).find((m) => m.id === 'oats');
-    expect(oats?.kind === 'fixed' && oats.items.every((i) => i.grams > 0)).toBe(true);
+  it('lässt auch beim niedrigsten einstellbaren Ziel an allen Tagen noch Haferflocken und Milch übrig', () => {
+    for (const date of [MONDAY, SUNDAY]) {
+      const oats = mealsOf(date, { kcalTarget: 2500 }).find((m) => m.id === 'oats');
+      expect(oats?.kind === 'fixed' && oats.items.every((i) => i.grams > 0), date).toBe(true);
+    }
   });
 });
 
@@ -69,5 +71,16 @@ describe('Extras ersetzen Mahlzeiten', () => {
     expect(replacedMeals(extras).has('frueh')).toBe(true);
     expect(openMeals(plan, { oats: 1 }, extras).map((m) => m.id)).toEqual(['mittag', 'snack', 'abend', 'spaet']);
     expect(openMeals(plan, {}, []).length).toBe(plan.length);
+  });
+});
+
+describe('Remoulade', () => {
+  it('gibt es nur zu den Eiern allein am Wochenende', () => {
+    const snack = (date: string) => mealsOf(date).find((m) => m.id === 'snack');
+    const items = (date: string) => (snack(date)?.kind === 'fixed' ? (snack(date) as { items: { food: string }[] }).items.map((i) => i.food) : []);
+    expect(items(SATURDAY)).toContain('remoulade');
+    expect(items(SUNDAY)).toContain('remoulade');
+    expect(items(MONDAY)).not.toContain('remoulade');
+    expect(mealsOf(SATURDAY, { startDate: MONDAY }).find((m) => m.id === 'mittag')?.name).toBe('Eier, Banane und Milch');
   });
 });

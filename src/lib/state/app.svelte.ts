@@ -1,6 +1,7 @@
 // Gemeinsamer App-Zustand. Svelte-Zustände sind Proxys; vor dem Speichern immer $state.snapshot nutzen.
 
 import { withDefaults, type ActiveWorkout, type Settings, type SleepEntry, type WeightEntry, type Workout } from '../model';
+import { CUSTOM_FOODS_KEY, addCustomFoods, type Food } from '../../data/foods';
 import { CUSTOM_KEY, addCustomRecipes, type Recipe } from '../../data/recipes';
 import * as repo from '../repo';
 
@@ -36,6 +37,7 @@ export async function loadApp(): Promise<void> {
   app.weights = weights;
   app.sleep = sleep;
   app.overrides = overrides;
+  if (Array.isArray(overrides[CUSTOM_FOODS_KEY])) addCustomFoods(overrides[CUSTOM_FOODS_KEY] as Food[]);
   if (Array.isArray(overrides[CUSTOM_KEY])) addCustomRecipes(overrides[CUSTOM_KEY] as Recipe[]);
   app.active = active;
   app.ready = true;

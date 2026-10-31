@@ -5,7 +5,7 @@
   import TodayTraining from '../components/TodayTraining.svelte';
   import WeekStrip from '../components/WeekStrip.svelte';
   import { deloadAdvice, isStagnating } from '../lib/blocks';
-  import { formatDate, todayKey, weekStart } from '../lib/dates';
+  import { formatDate, todayKey, weekStart, weekday } from '../lib/dates';
   import { plannedDay } from '../lib/plan';
   import { trainingStreak } from '../lib/streaks';
   import { weekOverview } from '../lib/week';
@@ -46,6 +46,13 @@
   </header>
 
   <MorningCheck />
+
+  {#if weekday(today) === 5}
+    <a class="card saturday" href="#/einkauf/samstag">
+      <span class="row-grow"><strong>Samstags-Assistent</strong><br /><span class="small muted">Rückblick, Gerichte für die Woche, Einkaufsliste und Bon</span></span>
+      <Icon name="chevron-right" />
+    </a>
+  {/if}
 
   <TodayTraining />
 
@@ -96,7 +103,7 @@
   {/if}
 
   <section class="card soon">
-    <p class="small muted">Mahlzeiten, Einkauf und dein Tagesablauf kommen mit den nächsten Updates in diese Übersicht.</p>
+    <p class="small muted">Dein Tagesablauf mit Mahlzeiten, Abend-Retter und Tipp des Tages kommt mit dem nächsten Update in diese Übersicht.</p>
   </section>
 </div>
 
@@ -122,6 +129,15 @@
 
   .inner {
     background: var(--surface-2);
+  }
+
+  .saturday {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: inherit;
+    text-decoration: none;
+    box-shadow: inset 3px 0 0 var(--accent-ink);
   }
 
   .soon {

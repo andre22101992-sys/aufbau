@@ -51,3 +51,14 @@ export function getFood(id: string): Food {
   if (!food) throw new Error(`Unbekanntes Lebensmittel: ${id}`);
   return food;
 }
+
+/** Eigene Lebensmittel, z. B. per Barcode angelegt */
+export const CUSTOM_FOODS_KEY = 'foods:custom';
+
+export function addCustomFoods(list: Food[]): void {
+  for (const food of list) {
+    if (FOOD_BY_ID[food.id]) continue;
+    FOODS.push(food);
+    FOOD_BY_ID[food.id] = food;
+  }
+}

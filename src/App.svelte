@@ -7,7 +7,10 @@
   import { unlockSound } from './lib/sound';
   import { app, loadApp } from './lib/state/app.svelte';
   import { go, initRouter, router } from './lib/state/router.svelte';
+  import Bon from './views/Bon.svelte';
   import Einkauf from './views/Einkauf.svelte';
+  import Samstag from './views/Samstag.svelte';
+  import Scan from './views/Scan.svelte';
   import Einstellungen from './views/Einstellungen.svelte';
   import Essen from './views/Essen.svelte';
   import Fortschritt from './views/Fortschritt.svelte';
@@ -73,6 +76,12 @@
       <Kochmodus id={segments[2]} portions={Number(segments[3]) || 2} />
     {:else if segments[0] === 'essen'}
       <Essen />
+    {:else if segments[0] === 'einkauf' && segments[1] === 'bon'}
+      <Bon />
+    {:else if segments[0] === 'einkauf' && segments[1] === 'scan'}
+      <Scan />
+    {:else if segments[0] === 'einkauf' && segments[1] === 'samstag'}
+      <Samstag />
     {:else if segments[0] === 'einkauf'}
       <Einkauf />
     {:else if segments[0] === 'fortschritt'}

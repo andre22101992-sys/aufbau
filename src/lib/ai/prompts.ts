@@ -63,3 +63,56 @@ export function photoPrompt(): string {
     '```',
   ].join('\n');
 }
+
+const RECEIPT_FORMAT = '{"items": [{"text": "<Name wie auf dem Bon>", "euro": 1.29, "food": "<id oder leer>"}], "total": 33.85}';
+
+/** Bon auslesen: per Foto an Claude oder als gescannter Text an Apple Intelligence */
+export function receiptPrompt(text?: string, short = false): string {
+  const ids = FOODS.map((f) => f.id).join(', ');
+  if (short) {
+    return `Sortiere diesen Kassenbon in Artikel und Preise. Rabatte vom Artikel abziehen, Pfand als eigener Artikel, die Summe als "total". Ordne jedem Artikel wenn möglich eine dieser IDs zu: ${ids}. Antworte nur mit JSON: ${RECEIPT_FORMAT}\n\nBon:\n${text ?? ''}`;
+  }
+  return [
+    text ? 'Hier ist der Text eines Lidl-Kassenbons:' : 'Im Bild siehst du einen Lidl-Kassenbon (Papier oder Lidl Plus).',
+    text ?? '',
+    '',
+    'Lies alle Artikel mit ihrem Endpreis aus. Rabatte und Preisvorteile ziehst du direkt vom Artikel ab, Pfand ist ein eigener Artikel. Mengenzeilen wie „2 x 0,79“ gehören zum Artikel darüber. Zahlungsdaten ignorierst du.',
+    `Ordne jedem Artikel wenn möglich eine dieser Lebensmittel-IDs zu, sonst lass "food" leer: ${FOOD_LIST}.`,
+    '',
+    'Antworte nur mit einem JSON-Block in genau diesem Format, ohne weiteren Text:',
+    '```json',
+    RECEIPT_FORMAT,
+    '```',
+  ]
+    .filter((line, i) => !(i === 1 && !line))
+    .join('\n');
+}
+
+export interface WeekSummary {
+  trainings: number;
+  planned: number;
+  weightChange: number | null;
+  trend: number | null;
+  sleepAvg: number | null;
+  kcalTarget: number;
+  feelings: number[];
+}
+
+/** Wochen-Coach: kurze Tipps über Apple Intelligence, ausführliche Auswertung über Claude */
+export function coachPrompt(s: WeekSummary, short = false): string {
+  const facts = [
+    `Trainings: ${s.trainings} von ${s.planned}`,
+    s.weightChange !== null ? `Wochenschnitt Gewicht: ${s.weightChange >= 0 ? '+' : ''}${s.weightChange.toFixed(1)} kg zur Vorwoche (Ziel +0,2 bis +0,5 kg)` : 'Gewicht: zu wenige Werte',
+    s.trend !== null ? `Trendgewicht: ${s.trend.toFixed(1)} kg` : '',
+    s.sleepAvg !== null ? `Schlaf im Schnitt: ${s.sleepAvg.toFixed(1)} h` : '',
+    s.feelings.length ? `Gefühl nach den Trainings (1–5): ${s.feelings.join(', ')}` : '',
+    `Kalorienziel: ${s.kcalTarget} kcal, mindestens 120 g Protein`,
+  ].filter(Boolean);
+  if (short) return `Gib mir 2 kurze, freundliche Tipps auf Deutsch für meine nächste Trainingswoche (Muskelaufbau, Anfänger). Daten: ${facts.join('; ')}.`;
+  return [
+    'Ich bin Anfänger im Muskelaufbau (Fokus Oberkörper und Arme), trainiere 5× pro Woche zu Hause mit einer Kurzhantel und esse nach Plan. Hier ist meine Woche:',
+    ...facts.map((f) => `- ${f}`),
+    '',
+    'Gib mir 2–3 konkrete, ermutigende Tipps für die nächste Woche: Training, Essen oder Erholung. Kurz und ohne Fachchinesisch.',
+  ].join('\n');
+}

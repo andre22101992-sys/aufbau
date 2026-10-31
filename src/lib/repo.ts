@@ -2,6 +2,7 @@
 // Wichtig: Svelte-Zustände vor dem Speichern mit $state.snapshot in normale Objekte verwandeln.
 
 import { STORE_NAMES, getDB } from './db';
+import type { PriceEntry, Receipt, StockEntry } from './shopping';
 import { withDefaults, type ActiveWorkout, type Settings, type SleepEntry, type WeightEntry, type Workout } from './model';
 
 const SETTINGS_KEY = 'main';
@@ -129,4 +130,47 @@ export async function loadMeals(date: string): Promise<DayMeals> {
 export async function saveMeals(day: DayMeals): Promise<void> {
   const db = await getDB();
   await db.put('meals', { ...day });
+}
+
+// ---------- Einkauf ----------
+
+export async function listStock(): Promise<StockEntry[]> {
+  const db = await getDB();
+  return (await db.getAll('stock')) as unknown as StockEntry[];
+}
+
+export async function saveStock(entry: StockEntry): Promise<void> {
+  const db = await getDB();
+  await db.put('stock', { ...entry });
+}
+
+export async function listPrices(): Promise<PriceEntry[]> {
+  const db = await getDB();
+  return (await db.getAll('prices')) as unknown as PriceEntry[];
+}
+
+export async function savePrice(entry: PriceEntry): Promise<void> {
+  const db = await getDB();
+  await db.put('prices', { ...entry });
+}
+
+export async function listReceipts(): Promise<Receipt[]> {
+  const db = await getDB();
+  return (await db.getAll('receipts')) as unknown as Receipt[];
+}
+
+export async function saveReceipt(receipt: Receipt): Promise<void> {
+  const db = await getDB();
+  await db.put('receipts', { ...receipt });
+}
+
+export async function listAliases(): Promise<Record<string, string>> {
+  const db = await getDB();
+  const all = (await db.getAll('aliases')) as unknown as { text: string; foodId: string }[];
+  return Object.fromEntries(all.map((a) => [a.text, a.foodId]));
+}
+
+export async function saveAlias(text: string, foodId: string): Promise<void> {
+  const db = await getDB();
+  await db.put('aliases', { text, foodId });
 }

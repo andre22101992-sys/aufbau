@@ -57,3 +57,21 @@ export function parseRecipe(text: string): ParseResult<Recipe> {
 export function parsePhoto(text: string): ParseResult<z.infer<typeof photoAnswer>> {
   return parseWith(photoAnswer, text);
 }
+
+export const receiptAnswer = z.object({
+  items: z.array(z.object({ text: z.string().min(1), euro: z.number().min(-50).max(200), food: z.string().optional().nullable() })).min(1),
+  total: z.number().min(0).max(1000).nullable().optional(),
+});
+
+export function parseReceiptAnswer(text: string): ParseResult<{ items: { text: string; euro: number; foodId?: string }[]; total: number | null }> {
+  const parsed = parseWith(receiptAnswer, text);
+  if (!parsed.ok) return parsed;
+  const known = new Set(foodIds);
+  return {
+    ok: true,
+    value: {
+      items: parsed.value.items.map((i) => ({ text: i.text, euro: i.euro, foodId: i.food && known.has(i.food) ? i.food : undefined })),
+      total: parsed.value.total ?? null,
+    },
+  };
+}
